@@ -1,0 +1,4 @@
+navidrome-playlists
+*.env
+.env
+tmp/
