@@ -1,0 +1,78 @@
+{{template "base.html" .}}
+{{define "content"}}
+<h2>{{if .IsNew}}New Smart Playlist{{else}}Edit Smart &mdash; {{.Playlist.Name}}{{end}}</h2>
+
+<form method="POST" action="{{if .IsNew}}/playlists/smart{{else}}/playlists/{{.Playlist.ID}}/smart{{end}}" id="smart-form">
+    <div class="form-row">
+        <div class="form-group">
+            <label for="sname">Name</label>
+            <input type="text" id="sname" name="name" value="{{.Playlist.Name}}" required autofocus>
+        </div>
+        <div class="form-group">
+            <label for="scomment">Comment</label>
+            <input type="text" id="scomment" name="comment" value="{{.Playlist.Comment}}">
+        </div>
+    </div>
+
+    <h2>Rules</h2>
+    <div class="rule-editor-toggle">
+        <button type="button" class="view-btn active" id="btn-visual" onclick="switchEditorMode('visual')">Visual</button>
+        <button type="button" class="view-btn" id="btn-json" onclick="switchEditorMode('json')">JSON</button>
+    </div>
+    <input type="hidden" name="editor_mode" id="editor-mode" value="visual">
+
+    <div id="visual-editor">
+        <div class="rule-list" id="rule-list"></div>
+        <button type="button" class="tool-btn" style="margin-bottom:1rem;" onclick="addRuleRow('title','contains','')">+ add rule</button>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="sort">Sort</label>
+                <select id="sort" name="sort">
+                    <option value="+dateAdded">Date Added &#8593;</option>
+                    <option value="-dateAdded">Date Added &#8595;</option>
+                    <option value="+rating">Rating &#8593;</option>
+                    <option value="-rating">Rating &#8595;</option>
+                    <option value="+playCount">Play Count &#8593;</option>
+                    <option value="-playCount">Play Count &#8595;</option>
+                    <option value="+title">Title &#8593;</option>
+                    <option value="+artist">Artist &#8593;</option>
+                    <option value="+year">Year &#8593;</option>
+                    <option value="">Random</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="limit">Limit (0 = unlimited)</label>
+                <input type="number" id="limit" name="limit" value="{{if .Playlist.Rules}}{{.Playlist.Rules.Limit}}{{else}}0{{end}}" min="0">
+            </div>
+        </div>
+    </div>
+
+    <div id="json-editor" style="display:none;">
+        <div class="form-group">
+            <label for="rules-json-area">Rules JSON (NSP format)</label>
+            <textarea class="json-editor" id="rules-json-area" name="rules_json" rows="12"></textarea>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit">Save</button>
+        <a class="btn secondary" href="/">Cancel</a>
+    </div>
+</form>
+
+<script>
+var FIELDS = [
+    {{- range .Fields -}}
+    {value:"{{.Value}}",label:"{{.Label}}",type:"{{.Type}}"},
+    {{- end -}}
+];
+var OPERATORS = {
+    text:    [{value:"is",label:"is"},{value:"isNot",label:"is not"},{value:"contains",label:"contains"},{value:"startsWith",label:"starts with"},{value:"endsWith",label:"ends with"}],
+    number:  [{value:"is",label:"="},{value:"isNot",label:"not"},{value:"gt",label:">"},{value:"lt",label:"<"}],
+    boolean: [{value:"is",label:"is"}],
+    date:    [{value:"before",label:"before"},{value:"after",label:"after"},{value:"inTheLast",label:"in the last"}]
+};
+var initialRulesJSON = {{.RulesJSON}};
+</script>
+<script src="/static/rule-builder.js"></script>
+{{end}}
