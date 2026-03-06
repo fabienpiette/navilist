@@ -1,12 +1,15 @@
 package main
 
 import (
+	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/user/navidrome-playlists/web"
 )
 
 func main() {
@@ -19,9 +22,18 @@ func main() {
 	_ = navidromeUser
 	_ = navidromePass
 
+	tpl := template.Must(template.New("").Funcs(template.FuncMap{
+		"add": func(a, b int) int { return a + b },
+	}).ParseFS(web.Files, "templates/base.html"))
+	_ = tpl
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+
+	staticSub, _ := fs.Sub(web.Files, "static")
+	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.FS(staticSub))))
+
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})
