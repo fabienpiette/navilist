@@ -14,7 +14,7 @@ func TestClientAuth(t *testing.T) {
 		if r.URL.Path != "/api/auth/login" {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		json.NewEncoder(w).Encode(map[string]any{
 			"data": map[string]string{"token": "test-token"},
 		})
 	}))
@@ -30,7 +30,7 @@ func newMockServer(t *testing.T, handler http.HandlerFunc) (*httptest.Server, *n
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/auth/login", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]string{"token": "tok"}})
+		json.NewEncoder(w).Encode(map[string]any{"data": map[string]string{"token": "tok"}})
 	})
 	mux.HandleFunc("/", handler)
 	srv := httptest.NewServer(mux)

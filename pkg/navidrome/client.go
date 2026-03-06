@@ -68,7 +68,7 @@ func (c *Client) ensureToken() error {
 }
 
 // Do executes an authenticated HTTP request.
-func (c *Client) Do(ctx context.Context, method, path string, body interface{}) (*http.Response, error) {
+func (c *Client) Do(ctx context.Context, method, path string, body any) (*http.Response, error) {
 	if err := c.ensureToken(); err != nil {
 		return nil, err
 	}
