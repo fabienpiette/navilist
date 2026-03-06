@@ -2,3 +2,6 @@ navidrome-playlists
 *.env
 .env
 tmp/
+
+.serena/
+server
