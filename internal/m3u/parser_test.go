@@ -50,4 +50,57 @@ func TestParseWindowsLineEndings(t *testing.T) {
 	if len(tracks) != 1 {
 		t.Fatalf("expected 1 track, got %d", len(tracks))
 	}
+	if tracks[0].Path != "/music/track.flac" {
+		t.Errorf("wrong path: %s", tracks[0].Path)
+	}
+}
+
+func TestParseMalformedDuration(t *testing.T) {
+	input := "#EXTM3U\n#EXTINF:notanumber,Title Only\n/music/track.flac\n"
+	tracks, err := m3u.Parse(strings.NewReader(input))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tracks) != 1 {
+		t.Fatalf("expected 1 track, got %d", len(tracks))
+	}
+	if tracks[0].Duration != -1 {
+		t.Errorf("expected duration -1, got %d", tracks[0].Duration)
+	}
+	if tracks[0].Title != "Title Only" {
+		t.Errorf("expected title-only, got %q", tracks[0].Title)
+	}
+	if tracks[0].Artist != "" {
+		t.Errorf("expected no artist, got %q", tracks[0].Artist)
+	}
+}
+
+func TestParseEmpty(t *testing.T) {
+	tracks, err := m3u.Parse(strings.NewReader(""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tracks) != 0 {
+		t.Fatalf("expected 0 tracks, got %d", len(tracks))
+	}
+}
+
+func TestWrite(t *testing.T) {
+	var buf strings.Builder
+	tracks := []m3u.WriteTrack{
+		{Path: "/music/song.flac", Title: "Song", Artist: "Artist", Duration: 120},
+	}
+	if err := m3u.Write(&buf, tracks); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "#EXTM3U") {
+		t.Error("missing #EXTM3U header")
+	}
+	if !strings.Contains(out, "#EXTINF:120,Artist - Song") {
+		t.Errorf("missing EXTINF line, got: %s", out)
+	}
+	if !strings.Contains(out, "/music/song.flac") {
+		t.Error("missing path")
+	}
 }

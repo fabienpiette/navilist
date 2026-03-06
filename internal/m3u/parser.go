@@ -21,6 +21,7 @@ func Parse(r io.Reader) ([]Track, error) {
 	var pending *Track
 
 	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 0, 4096), 1024*1024) // allow up to 1 MiB per line
 	for scanner.Scan() {
 		line := strings.TrimRight(scanner.Text(), "\r")
 		line = strings.TrimSpace(line)
@@ -29,8 +30,7 @@ func Parse(r io.Reader) ([]Track, error) {
 			continue
 		}
 
-		if strings.HasPrefix(line, "#EXTINF:") {
-			rest := strings.TrimPrefix(line, "#EXTINF:")
+		if rest, ok := strings.CutPrefix(line, "#EXTINF:"); ok {
 			parts := strings.SplitN(rest, ",", 2)
 			dur := -1
 			if d, err := strconv.Atoi(strings.TrimSpace(parts[0])); err == nil {
@@ -39,9 +39,9 @@ func Parse(r io.Reader) ([]Track, error) {
 			t := &Track{Duration: dur}
 			if len(parts) == 2 {
 				info := strings.TrimSpace(parts[1])
-				if idx := strings.Index(info, " - "); idx != -1 {
-					t.Artist = strings.TrimSpace(info[:idx])
-					t.Title = strings.TrimSpace(info[idx+3:])
+				if artist, title, found := strings.Cut(info, " - "); found {
+					t.Artist = strings.TrimSpace(artist)
+					t.Title = strings.TrimSpace(title)
 				} else {
 					t.Title = info
 				}
