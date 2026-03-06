@@ -1,0 +1,17 @@
+services:
+  playlist-manager:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      NAVIDROME_URL: http://navidrome:4533
+      NAVIDROME_USER: admin
+      NAVIDROME_PASS: secret
+      PORT: "8080"
+    networks:
+      - navidrome-net
+
+networks:
+  navidrome-net:
+    external: true
