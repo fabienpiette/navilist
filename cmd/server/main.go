@@ -30,7 +30,12 @@ func main() {
 	}).ParseFS(web.Files,
 		"templates/base.html",
 		"templates/playlist_list.html",
+		"templates/playlist_detail.html",
+		"templates/playlist_form.html",
+		"templates/smart_form.html",
+		"templates/import_form.html",
 		"templates/partials/toast.html",
+		"templates/partials/search_results.html",
 	))
 
 	h := handlers.New(nd, tpl)

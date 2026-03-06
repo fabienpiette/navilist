@@ -1,0 +1,45 @@
+{{template "base.html" .}}
+{{define "content"}}
+<h2>Import M3U Playlist</h2>
+
+{{if not .Results}}
+<form method="POST" action="/import" enctype="multipart/form-data" style="max-width:480px;">
+    <div class="form-group">
+        <label for="m3u_file">M3U File</label>
+        <input type="file" id="m3u_file" name="m3u_file" accept=".m3u,.m3u8" required>
+    </div>
+    <div class="form-actions">
+        <button type="submit">Parse File</button>
+        <a class="btn secondary" href="/">Cancel</a>
+    </div>
+</form>
+{{else}}
+<form method="POST" action="/import/confirm">
+    <div class="form-group" style="max-width:400px; margin-bottom:1rem;">
+        <label for="iname">Playlist Name</label>
+        <input type="text" id="iname" name="name" value="{{.Name}}" required>
+    </div>
+
+    <h2>Match Report</h2>
+    <div class="match-report">
+        {{range .Results}}
+        <div class="match-row {{if .Matched}}match-ok{{else}}match-fail{{end}}">
+            {{if .Matched}}
+            <input type="hidden" name="song_id" value="{{.Song.ID}}">
+            <span>{{.Song.Artist}} &mdash; {{.Song.Title}}</span>
+            <span class="muted mono" style="margin-left:auto;">{{.Path}}</span>
+            {{else}}
+            <span class="muted">{{.Path}}</span>
+            <span class="muted" style="margin-left:auto;">not found</span>
+            {{end}}
+        </div>
+        {{end}}
+    </div>
+
+    <div class="form-actions">
+        <button type="submit">Create Playlist</button>
+        <a class="btn secondary" href="/import">Start Over</a>
+    </div>
+</form>
+{{end}}
+{{end}}
