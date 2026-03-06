@@ -5,3 +5,9 @@ tmp/
 
 .serena/
 server
+
+# kept locally, not tracked in git
+CLAUDE.md
+.claude/
+screenshoot.png
+docs/plans/
