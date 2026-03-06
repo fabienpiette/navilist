@@ -1,0 +1,56 @@
+{{template "base.html" .}}
+{{define "content"}}
+<h2>{{if .IsNew}}New M3U Playlist{{else}}Edit &mdash; {{.Playlist.Name}}{{end}}</h2>
+
+<form method="POST" action="{{if .IsNew}}/playlists{{else}}/playlists/{{.Playlist.ID}}{{end}}">
+    <div class="form-row">
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" value="{{.Playlist.Name}}" required autofocus>
+        </div>
+        <div class="form-group">
+            <label for="comment">Comment</label>
+            <input type="text" id="comment" name="comment" value="{{.Playlist.Comment}}">
+        </div>
+    </div>
+
+    <h2>Tracks</h2>
+    <div class="toolbar">
+        <input type="text" id="search-input" name="q" placeholder="Search tracks&#8230;"
+            hx-get="/search"
+            hx-trigger="keyup changed delay:300ms"
+            hx-target="#search-results"
+            hx-include="[name=q]"
+            style="flex:1; max-width:400px;">
+    </div>
+
+    <div id="search-results" class="table-wrap" style="margin-bottom:1rem;"></div>
+
+    <div class="table-wrap">
+        <table id="track-list">
+            <thead>
+                <tr><th>#</th><th>Title</th><th>Artist</th><th>Album</th><th></th></tr>
+            </thead>
+            <tbody>
+                {{range $i, $t := .Tracks}}
+                <tr>
+                    <td class="mono">{{add $i 1}}</td>
+                    <td>{{$t.Title}}</td>
+                    <td class="muted">{{$t.Artist}}</td>
+                    <td class="muted">{{$t.Album}}</td>
+                    <td>
+                        <input type="hidden" name="song_id" value="{{$t.ID}}">
+                        <button type="button" class="action-btn danger" onclick="this.closest('tr').remove()">&#215;</button>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit">Save</button>
+        <a class="btn secondary" href="/">Cancel</a>
+    </div>
+</form>
+{{end}}

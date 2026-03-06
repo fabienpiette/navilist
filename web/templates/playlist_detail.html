@@ -1,0 +1,34 @@
+{{template "base.html" .}}
+{{define "content"}}
+<div class="toolbar" style="margin-bottom:1.5rem;">
+    <strong>{{.Playlist.Name}}</strong>
+    {{if .Playlist.IsSmart}}<span class="badge-smart">smart</span>{{else}}<span class="badge-m3u">m3u</span>{{end}}
+    <div style="margin-left:auto; display:flex; gap:.5rem;">
+        {{if .Playlist.IsSmart}}
+        <a class="tool-btn" href="/playlists/{{.Playlist.ID}}/edit/smart">edit rules</a>
+        {{else}}
+        <a class="tool-btn" href="/playlists/{{.Playlist.ID}}/edit">edit</a>
+        <a class="tool-btn" href="/playlists/{{.Playlist.ID}}/export">export .m3u</a>
+        {{end}}
+        <a class="tool-btn" href="/">&#8592; back</a>
+    </div>
+</div>
+{{if .Playlist.Comment}}<p class="muted" style="margin-bottom:1rem;">{{.Playlist.Comment}}</p>{{end}}
+<div class="table-wrap">
+    <table>
+        <thead><tr><th>#</th><th>Title</th><th>Artist</th><th>Album</th></tr></thead>
+        <tbody>
+        {{range $i, $t := .Tracks}}
+        <tr>
+            <td class="mono">{{add $i 1}}</td>
+            <td>{{$t.Title}}</td>
+            <td class="muted">{{$t.Artist}}</td>
+            <td class="muted">{{$t.Album}}</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="4" class="empty">No tracks.</td></tr>
+        {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

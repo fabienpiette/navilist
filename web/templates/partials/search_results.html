@@ -1,0 +1,24 @@
+{{define "search_results"}}
+{{if .}}
+<table>
+    <thead><tr><th>Title</th><th>Artist</th><th>Album</th><th></th></tr></thead>
+    <tbody>
+    {{range .}}
+    <tr>
+        <td>{{.Title}}</td>
+        <td class="muted">{{.Artist}}</td>
+        <td class="muted">{{.Album}}</td>
+        <td>
+            <button type="button" class="action-btn"
+                data-id="{{.ID}}"
+                data-title="{{.Title}}"
+                data-artist="{{.Artist}}"
+                data-album="{{.Album}}"
+                onclick="addTrack(this.dataset.id,this.dataset.title,this.dataset.artist,this.dataset.album)">+</button>
+        </td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+{{end}}
+{{end}}
