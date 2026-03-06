@@ -27,7 +27,7 @@ type PlaylistRules struct {
 }
 
 // Rule is a single criterion: {"operator": {"field": "value"}}
-type Rule map[string]interface{}
+type Rule map[string]any
 
 // Song represents a Navidrome track.
 type Song struct {
