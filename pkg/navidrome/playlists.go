@@ -17,8 +17,8 @@ func (c *Client) ListPlaylists(ctx context.Context) ([]Playlist, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("list playlists: status %d", resp.StatusCode)
 	}
-	var r ndResponse[[]Playlist]
-	return r.Data, json.NewDecoder(resp.Body).Decode(&r)
+	var r []Playlist
+	return r, json.NewDecoder(resp.Body).Decode(&r)
 }
 
 func (c *Client) GetPlaylist(ctx context.Context, id string) (Playlist, error) {
@@ -30,12 +30,12 @@ func (c *Client) GetPlaylist(ctx context.Context, id string) (Playlist, error) {
 	if resp.StatusCode != http.StatusOK {
 		return Playlist{}, fmt.Errorf("get playlist: status %d", resp.StatusCode)
 	}
-	var r ndResponse[Playlist]
-	return r.Data, json.NewDecoder(resp.Body).Decode(&r)
+	var r Playlist
+	return r, json.NewDecoder(resp.Body).Decode(&r)
 }
 
 func (c *Client) GetPlaylistTracks(ctx context.Context, id string) ([]Song, error) {
-	resp, err := c.Do(ctx, http.MethodGet, "/api/playlist/"+id+"/tracks?_start=0&_end=-1", nil)
+	resp, err := c.Do(ctx, http.MethodGet, "/api/playlist/"+id+"/tracks?_start=0&_end=500", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +43,8 @@ func (c *Client) GetPlaylistTracks(ctx context.Context, id string) ([]Song, erro
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("get tracks: status %d", resp.StatusCode)
 	}
-	var r ndResponse[[]Song]
-	return r.Data, json.NewDecoder(resp.Body).Decode(&r)
+	var r []Song
+	return r, json.NewDecoder(resp.Body).Decode(&r)
 }
 
 func (c *Client) CreatePlaylist(ctx context.Context, req CreatePlaylistRequest) (Playlist, error) {
@@ -56,8 +56,13 @@ func (c *Client) CreatePlaylist(ctx context.Context, req CreatePlaylistRequest) 
 	if resp.StatusCode != http.StatusOK {
 		return Playlist{}, fmt.Errorf("create playlist: status %d", resp.StatusCode)
 	}
-	var r ndResponse[Playlist]
-	return r.Data, json.NewDecoder(resp.Body).Decode(&r)
+	var created struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&created); err != nil {
+		return Playlist{}, fmt.Errorf("create playlist decode: %w", err)
+	}
+	return c.GetPlaylist(ctx, created.ID)
 }
 
 func (c *Client) UpdatePlaylist(ctx context.Context, id string, req UpdatePlaylistRequest) error {

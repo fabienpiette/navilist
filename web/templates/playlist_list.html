@@ -1,33 +1,48 @@
 {{template "base.html" .}}
 
 {{define "content"}}
-<h2>Playlists <span class="muted">{{.Total}} total &middot; {{.Smart}} smart</span></h2>
 
 <div class="toolbar">
-    <button class="tool-btn" hx-get="/" hx-target="#playlist-table" hx-swap="innerHTML">
+    <input type="search" id="playlist-search" placeholder="search playlists…"
+        class="toolbar-search" style="width:16rem;"
+        oninput="filterPlaylists(this.value);sessionStorage.setItem('playlist-search',this.value)"
+        title="Filter playlists by name">
+    <button class="tool-btn" hx-get="/" hx-target="#playlist-table" hx-swap="innerHTML" title="Refresh the list">
         <span class="spin-icon">&#8635;</span> refresh
     </button>
-    <a class="tool-btn" href="/playlists/new">+ M3U</a>
-    <a class="tool-btn" href="/playlists/new/smart">+ Smart</a>
-    <button class="tool-btn danger" type="submit" form="batch-form" onclick="return confirm('Delete selected playlists?')">batch delete</button>
+    <a class="tool-btn" href="/playlists/new" title="Create a new M3U playlist">+ M3U</a>
+    <a class="tool-btn" href="/playlists/new/smart" title="Create a new Smart playlist">+ Smart</a>
+    <button class="tool-btn danger" type="submit" form="batch-form" onclick="return confirm('Delete selected playlists?')" title="Delete all checked playlists">batch delete</button>
+    <button class="tool-btn" onclick="submitMerge(event)" title="Merge checked playlists into a new one">merge selected</button>
+    <button class="tool-btn" onclick="submitDedup(event)" title="Find duplicate playlists among checked">find duplicates</button>
+    <button class="tool-btn" onclick="submitSmartRename(event)" title="Suggest names for checked playlists based on their tracks">smart rename</button>
+    {{if .Empty}}
+    <button class="tool-btn danger"
+        hx-post="/playlists/batch/delete-empty"
+        hx-confirm="Delete all {{.Empty}} empty playlist(s)?"
+        hx-on::after-request="window.location='/'"
+        title="Delete all playlists with zero tracks">delete empty ({{.Empty}})</button>
+    {{end}}
 </div>
 
 <div class="filter-pills">
-    <a class="filter-pill {{if eq .Filter "all"}}active{{end}}" href="/?filter=all">all</a>
-    <a class="filter-pill {{if eq .Filter "m3u"}}active{{end}}" href="/?filter=m3u">m3u</a>
-    <a class="filter-pill {{if eq .Filter "smart"}}active{{end}}" href="/?filter=smart">smart</a>
+    <a class="filter-pill {{if eq .Filter "all"}}active{{end}}" href="/?filter=all" title="Show all playlists" data-pill="all">all (<span id="count-all">{{.Total}}</span>)</a>
+    <a class="filter-pill {{if eq .Filter "m3u"}}active{{end}}" href="/?filter=m3u" title="Show M3U playlists only" data-pill="m3u">m3u (<span id="count-m3u">{{.M3u}}</span>)</a>
+    <a class="filter-pill {{if eq .Filter "smart"}}active{{end}}" href="/?filter=smart" title="Show Smart playlists only" data-pill="smart">smart (<span id="count-smart">{{.Smart}}</span>)</a>
 </div>
 
-<form method="POST" action="/playlists/batch/delete" id="batch-form"></form>
+<form method="POST" action="/playlists/batch/delete" id="batch-form"
+    onsubmit="document.querySelectorAll('.row-cb:checked').forEach(function(cb){if(cb.closest('tr').style.display==='none')cb.checked=false;})"></form>
 
 <div class="table-wrap">
     <table>
         <thead>
             <tr>
                 <th style="width:2rem"><input type="checkbox" id="select-all" title="Select all"></th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Tracks</th>
+                <th class="sortable" data-sort="name" title="Sort by name">Name</th>
+                <th class="sortable" data-sort="type" title="Sort by type">Type</th>
+                <th class="sortable" data-sort="tracks" title="Sort by track count">Tracks</th>
+                <th class="sortable" data-sort="created" title="Sort by creation date">Created</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -37,41 +52,175 @@
     </table>
 </div>
 <script>
-document.getElementById('select-all').addEventListener('change', function() {
-    document.querySelectorAll('.row-cb').forEach(function(cb) { cb.checked = this.checked; }, this);
+document.addEventListener('DOMContentLoaded', function() {
+    var saved = sessionStorage.getItem('playlist-search') || '';
+    if (saved) {
+        var input = document.getElementById('playlist-search');
+        input.value = saved;
+        filterPlaylists(saved);
+    }
 });
+
+function filterPlaylists(q) {
+    var needle = q.trim().toLowerCase();
+    var counts = { all: 0, m3u: 0, smart: 0 };
+    document.querySelectorAll('#playlist-table tr[id]').forEach(function(row) {
+        var name = row.querySelector('td:nth-child(2) a').textContent.toLowerCase();
+        var visible = needle === '' || name.includes(needle);
+        row.style.display = visible ? '' : 'none';
+        if (visible) {
+            counts.all++;
+            var type = row.querySelector('td:nth-child(3)').textContent.trim();
+            counts[type] = (counts[type] || 0) + 1;
+        }
+    });
+    document.getElementById('count-all').textContent = counts.all;
+    document.getElementById('count-m3u').textContent = counts.m3u || 0;
+    document.getElementById('count-smart').textContent = counts.smart || 0;
+}
+
+function visibleChecked() {
+    return Array.from(document.querySelectorAll('.row-cb:checked')).filter(function(cb) {
+        return cb.closest('tr').style.display !== 'none';
+    });
+}
+
+document.getElementById('select-all').addEventListener('change', function() {
+    document.querySelectorAll('.row-cb').forEach(function(cb) {
+        if (cb.closest('tr').style.display !== 'none') cb.checked = this.checked;
+    }, this);
+});
+
+function submitMerge(e) {
+    e.preventDefault();
+    var checked = visibleChecked();
+    if (checked.length < 2) {
+        alert('Select at least 2 playlists to merge.');
+        return;
+    }
+    var f = document.createElement('form');
+    f.method = 'POST';
+    f.action = '/playlists/merge';
+    checked.forEach(function(cb) {
+        var inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'ids';
+        inp.value = cb.value;
+        f.appendChild(inp);
+    });
+    document.body.appendChild(f);
+    f.submit();
+}
+
+function submitDedup(e) {
+    e.preventDefault();
+    var checked = visibleChecked();
+    if (checked.length < 2) {
+        alert('Select at least 2 playlists to scan for duplicates.');
+        return;
+    }
+    var f = document.createElement('form');
+    f.method = 'POST';
+    f.action = '/playlists/dedup';
+    checked.forEach(function(cb) {
+        var inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'ids';
+        inp.value = cb.value;
+        f.appendChild(inp);
+    });
+    document.body.appendChild(f);
+    f.submit();
+}
+
+function submitSmartRename(e) {
+    e.preventDefault();
+    var checked = visibleChecked();
+    if (checked.length < 1) {
+        alert('Select at least 1 playlist to smart rename.');
+        return;
+    }
+    var f = document.createElement('form');
+    f.method = 'POST';
+    f.action = '/playlists/smart-rename';
+    checked.forEach(function(cb) {
+        var inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'ids';
+        inp.value = cb.value;
+        f.appendChild(inp);
+    });
+    document.body.appendChild(f);
+    f.submit();
+}
+
+(function() {
+    var sortState = { col: null, dir: 1 };
+
+    document.querySelectorAll('th[data-sort]').forEach(function(th) {
+        th.addEventListener('click', function() {
+            var col = th.dataset.sort;
+            sortState.dir = sortState.col === col ? sortState.dir * -1 : 1;
+            sortState.col = col;
+            sortRows(col, sortState.dir);
+            document.querySelectorAll('th[data-sort]').forEach(function(h) { delete h.dataset.dir; });
+            th.dataset.dir = sortState.dir === 1 ? 'asc' : 'desc';
+        });
+    });
+
+    function cellValue(row, col) {
+        switch (col) {
+            case 'name':   return row.querySelector('td:nth-child(2) a').textContent.trim().toLowerCase();
+            case 'type':   return row.querySelector('td:nth-child(3)').textContent.trim();
+            case 'tracks': return row.querySelector('td:nth-child(4)').textContent.trim().padStart(10, '0');
+            case 'created': return row.querySelector('td:nth-child(5)').textContent.trim();
+        }
+        return '';
+    }
+
+    function sortRows(col, dir) {
+        var tbody = document.getElementById('playlist-table');
+        var rows = Array.from(tbody.querySelectorAll('tr[id]'));
+        rows.sort(function(a, b) {
+            return cellValue(a, col).localeCompare(cellValue(b, col), undefined, {numeric: true}) * dir;
+        });
+        rows.forEach(function(r) { tbody.appendChild(r); });
+    }
+})();
 </script>
 {{end}}
 
 {{define "playlist_table"}}
 {{range .Playlists}}
 <tr id="row-{{.ID}}">
-    <td><input type="checkbox" class="row-cb" name="ids" value="{{.ID}}" form="batch-form"></td>
+    <td><input type="checkbox" class="row-cb" name="ids" value="{{.ID}}" form="batch-form" title="Select {{.Name}}"></td>
     <td>
-        <a href="/playlists/{{.ID}}">{{.Name}}</a>
+        <a href="/playlists/{{.ID}}" title="View {{.Name}}">{{.Name}}</a>
         {{if .IsSmart}}<span class="badge-smart">smart</span>{{else}}<span class="badge-m3u">m3u</span>{{end}}
     </td>
     <td class="muted">{{if .IsSmart}}smart{{else}}m3u{{end}}</td>
     <td class="mono">{{.SongCount}}</td>
+    <td class="muted">{{.CreatedAt.Format "2006-01-02"}}</td>
     <td>
         <div class="action-group">
-            <a class="action-btn" href="/playlists/{{.ID}}">view</a>
+            <a class="action-btn" href="/playlists/{{.ID}}" title="View tracks in {{.Name}}">view</a>
             {{if .IsSmart}}
-            <a class="action-btn" href="/playlists/{{.ID}}/edit/smart">edit</a>
+            <a class="action-btn" href="/playlists/{{.ID}}/edit/smart" title="Edit smart rules for {{.Name}}">edit</a>
             {{else}}
-            <a class="action-btn" href="/playlists/{{.ID}}/edit">edit</a>
-            <a class="action-btn" href="/playlists/{{.ID}}/export">export</a>
+            <a class="action-btn" href="/playlists/{{.ID}}/edit" title="Edit tracks in {{.Name}}">edit</a>
+            <a class="action-btn" href="/playlists/{{.ID}}/export" title="Download {{.Name}} as .m3u">export</a>
             {{end}}
             <button class="action-btn danger"
                 hx-delete="/playlists/{{.ID}}"
                 hx-target="#row-{{.ID}}"
                 hx-swap="outerHTML"
-                hx-confirm="Delete {{.Name}}?">delete</button>
+                hx-confirm="Delete {{.Name}}?"
+                title="Delete {{.Name}}">delete</button>
         </div>
     </td>
 </tr>
 {{else}}
-<tr><td colspan="5" class="empty">No playlists found.</td></tr>
+<tr><td colspan="6" class="empty">No playlists found.</td></tr>
 {{end}}
 {{end}}
 

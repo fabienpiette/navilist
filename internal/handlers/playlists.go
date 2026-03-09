@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/user/navidrome-playlists/pkg/navidrome"
+	"github.com/user/navilist/pkg/navidrome"
 )
 
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
@@ -39,20 +38,23 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 	total := len(playlists)
 	smart := 0
+	empty := 0
 	for _, p := range playlists {
 		if p.IsSmart() {
 			smart++
 		}
+		if p.SongCount == 0 {
+			empty++
+		}
 	}
 
-	data := map[string]any{
-		"ActiveTab": "playlists",
-		"Filter":    filter,
-		"Playlists": filtered,
-		"Total":     total,
-		"Smart":     smart,
-		"Stats":     fmt.Sprintf("%d playlists · %d smart", total, smart),
-	}
+	data := h.baseData("playlists")
+	data["Filter"] = filter
+	data["Playlists"] = filtered
+	data["Total"] = total
+	data["Smart"] = smart
+	data["M3u"] = total - smart
+	data["Empty"] = empty
 
 	if r.Header.Get("HX-Target") == "playlist-table" {
 		h.tpl.ExecuteTemplate(w, "playlist_table", data)
@@ -69,11 +71,10 @@ func (h *Handler) Detail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tracks, _ := h.nd.GetPlaylistTracks(r.Context(), id)
-	h.tpl.ExecuteTemplate(w, "playlist_detail.html", map[string]any{
-		"ActiveTab": "playlists",
-		"Playlist":  p,
-		"Tracks":    tracks,
-	})
+	data := h.baseData("playlists")
+	data["Playlist"] = p
+	data["Tracks"] = tracks
+	h.tpl.ExecuteTemplate(w, "playlist_detail.html", data)
 }
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {

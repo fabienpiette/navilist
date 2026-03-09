@@ -1,26 +1,35 @@
 {{template "base.html" .}}
 {{define "content"}}
-<h2>Import M3U Playlist</h2>
+<div class="page-title">
+    <a class="back-arrow" href="/" title="Back to playlist list">&#8592;</a>
+    <h2>Import M3U Playlist</h2>
+</div>
 
 {{if not .Results}}
-<form method="POST" action="/import" enctype="multipart/form-data" style="max-width:480px;">
-    <div class="form-group">
+<form method="POST" action="/import" enctype="multipart/form-data">
+    <div class="toolbar toolbar-sep">
+        <p class="muted" style="font-size:.75rem;margin-bottom:0;">Upload an .m3u or .m3u8 file to match tracks against your library.</p>
+        <button type="submit" style="margin-left:auto" title="Upload and parse the M3U file">parse file</button>
+    </div>
+    <div class="form-group" style="max-width:480px;">
         <label for="m3u_file">M3U File</label>
         <input type="file" id="m3u_file" name="m3u_file" accept=".m3u,.m3u8" required>
-    </div>
-    <div class="form-actions">
-        <button type="submit">Parse File</button>
-        <a class="btn secondary" href="/">Cancel</a>
     </div>
 </form>
 {{else}}
 <form method="POST" action="/import/confirm">
-    <div class="form-group" style="max-width:400px; margin-bottom:1rem;">
-        <label for="iname">Playlist Name</label>
-        <input type="text" id="iname" name="name" value="{{.Name}}" required>
+    <div class="toolbar toolbar-sep">
+        <a class="tool-btn" href="/import" title="Upload a different file">&#8592; start over</a>
+        <button type="submit" style="margin-left:auto" title="Create playlist from matched tracks">create playlist</button>
     </div>
 
-    <h2>Match Report</h2>
+    <div class="form-group section-sep" style="max-width:400px;">
+        <label for="iname">Playlist Name</label>
+        <input type="text" id="iname" name="name" value="{{.Name}}" required autofocus>
+    </div>
+
+    <h2 style="margin-bottom:.75rem;">Match Report</h2>
+    <p class="muted" style="font-size:.75rem;margin-bottom:.75rem;">Matched tracks will be added to the playlist. Unmatched tracks are skipped.</p>
     <div class="match-report">
         {{range .Results}}
         <div class="match-row {{if .Matched}}match-ok{{else}}match-fail{{end}}">
@@ -34,11 +43,6 @@
             {{end}}
         </div>
         {{end}}
-    </div>
-
-    <div class="form-actions">
-        <button type="submit">Create Playlist</button>
-        <a class="btn secondary" href="/import">Start Over</a>
     </div>
 </form>
 {{end}}

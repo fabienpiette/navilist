@@ -1,7 +1,19 @@
 navidrome-playlists
+navilist
 *.env
 .env
 tmp/
 
 .serena/
 server
+
+# test/build artifacts
+coverage.out
+coverage.html
+*cover.out
+
+# kept locally, not tracked in git
+CLAUDE.md
+.claude/
+screenshoot.png
+docs/plans/

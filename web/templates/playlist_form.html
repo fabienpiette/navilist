@@ -1,27 +1,43 @@
 {{template "base.html" .}}
 {{define "content"}}
-<h2>{{if .IsNew}}New M3U Playlist{{else}}Edit &mdash; {{.Playlist.Name}}{{end}}</h2>
+<div class="page-title">
+    <a class="back-arrow" href="{{if .IsNew}}/{{else}}/playlists/{{.Playlist.ID}}{{end}}" title="Discard changes and go back">&#8592;</a>
+    <h2>{{if .IsNew}}New M3U Playlist{{else}}Edit &mdash; {{.Playlist.Name}}{{end}}</h2>
+</div>
 
 <form method="POST" action="{{if .IsNew}}/playlists{{else}}/playlists/{{.Playlist.ID}}{{end}}">
-    <div class="form-row">
-        <div class="form-group">
+    <div class="form-row section-sep">
+        <div class="form-group" style="flex:2">
             <label for="name">Name</label>
-            <input type="text" id="name" name="name" value="{{.Playlist.Name}}" required autofocus>
+            <div style="display:flex;gap:.5rem;align-items:center;">
+                <input type="text" id="name" name="name" value="{{.Playlist.Name}}" required autofocus style="flex:1;">
+                {{if not .IsNew}}
+                <button type="button" class="tool-btn"
+                    hx-get="/playlists/{{.Playlist.ID}}/suggest-name"
+                    hx-swap="none"
+                    hx-on::after-request="if(event.detail.xhr.responseText.trim()) document.getElementById('name').value = event.detail.xhr.responseText.trim();"
+                    title="Suggest a name based on track content">suggest</button>
+                {{end}}
+            </div>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="flex:1">
             <label for="comment">Comment</label>
             <input type="text" id="comment" name="comment" value="{{.Playlist.Comment}}">
         </div>
     </div>
 
-    <h2>Tracks</h2>
-    <div class="toolbar">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;">
+        <h2 style="margin-bottom:0">Tracks</h2>
+        <p class="muted" style="font-size:.75rem;margin-bottom:0;">Search to add tracks. Click × to remove.</p>
+    </div>
+    <div class="toolbar toolbar-sep">
         <input type="text" id="search-input" name="q" placeholder="Search tracks&#8230;"
             hx-get="/search"
             hx-trigger="keyup changed delay:300ms"
             hx-target="#search-results"
             hx-include="[name=q]"
-            style="flex:1; max-width:400px;">
+            class="toolbar-search" style="flex:1;max-width:400px;">
+        <button type="submit" style="margin-left:auto" title="Save playlist">save</button>
     </div>
 
     <div id="search-results" class="table-wrap" style="margin-bottom:1rem;"></div>
@@ -40,17 +56,12 @@
                     <td class="muted">{{$t.Album}}</td>
                     <td>
                         <input type="hidden" name="song_id" value="{{$t.ID}}">
-                        <button type="button" class="action-btn danger" onclick="this.closest('tr').remove()">&#215;</button>
+                        <button type="button" class="action-btn danger" onclick="this.closest('tr').remove()" title="Remove this track">&#215;</button>
                     </td>
                 </tr>
                 {{end}}
             </tbody>
         </table>
-    </div>
-
-    <div class="form-actions">
-        <button type="submit">Save</button>
-        <a class="btn secondary" href="/">Cancel</a>
     </div>
 </form>
 {{end}}

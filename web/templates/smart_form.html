@@ -1,43 +1,99 @@
 {{template "base.html" .}}
 {{define "content"}}
-<h2>{{if .IsNew}}New Smart Playlist{{else}}Edit Smart &mdash; {{.Playlist.Name}}{{end}}</h2>
+<div class="page-title">
+    <a class="back-arrow" href="/" title="Discard changes and go back">&#8592;</a>
+    <h2>{{if .IsNew}}New Smart Playlist{{else}}Edit Smart &mdash; {{.Playlist.Name}}{{end}}</h2>
+</div>
 
-<form method="POST" action="{{if .IsNew}}/playlists/smart{{else}}/playlists/{{.Playlist.ID}}/smart{{end}}" id="smart-form">
-    <div class="form-row">
-        <div class="form-group">
+<form method="POST" action="{{if .IsNew}}/playlists/smart{{else}}/playlists/{{.Playlist.ID}}/smart{{end}}" id="smart-form" onsubmit="smartFormSubmit()">
+    {{/* 1. Controls bar: template selector left, clear+save grouped right */}}
+    <div class="toolbar toolbar-sep">
+        <select id="template-select" class="toolbar-search"
+            onchange="loadTemplate(this.value);this.value=''"
+            title="Replace current rules with a preset template">
+            <option value="">select template…</option>
+            <optgroup label="Activity">
+                <option value="0">Recently Played</option>
+                <option value="6">Recently Added</option>
+                <option value="7">Never Played</option>
+                <option value="8">Most Played</option>
+                <option value="9">Forgotten Favorites</option>
+            </optgroup>
+            <optgroup label="Taste">
+                <option value="2">Favourites</option>
+                <option value="10">Top Rated</option>
+                <option value="1">80s Top Songs</option>
+                <option value="4">2000s Hits</option>
+            </optgroup>
+            <optgroup label="Audio">
+                <option value="11">High Energy (BPM &gt; 120)</option>
+                <option value="5">High-Rated from Library</option>
+            </optgroup>
+            <optgroup label="Other">
+                <option value="3">All Songs (Random)</option>
+            </optgroup>
+        </select>
+        <div style="margin-left:auto;display:flex;gap:.5rem;">
+            <button type="button" class="tool-btn danger" onclick="clearRules()" title="Remove all rules, name, comment and reset sort/limit">clear</button>
+            <button type="submit" title="Save smart playlist">save</button>
+        </div>
+    </div>
+    <input type="hidden" name="editor_mode" id="editor-mode" value="visual">
+
+    {{/* 4. Name gets 2× space vs comment */}}
+    <div class="form-row section-sep">
+        <div class="form-group" style="flex:2">
             <label for="sname">Name</label>
             <input type="text" id="sname" name="name" value="{{.Playlist.Name}}" required autofocus>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="flex:1">
             <label for="scomment">Comment</label>
             <input type="text" id="scomment" name="comment" value="{{.Playlist.Comment}}">
         </div>
     </div>
 
-    <h2>Rules</h2>
-    <div class="rule-editor-toggle">
-        <button type="button" class="view-btn active" id="btn-visual" onclick="switchEditorMode('visual')">Visual</button>
-        <button type="button" class="view-btn" id="btn-json" onclick="switchEditorMode('json')">JSON</button>
+    <div style="display:flex;align-items:baseline;gap:.75rem;margin-bottom:.5rem;">
+        <h2 style="margin-bottom:0">Rules</h2>
+        <div class="rule-editor-toggle" style="margin-bottom:0">
+            <button type="button" class="view-btn active" id="btn-visual" onclick="switchEditorMode('visual')" title="Switch to visual rule editor">Visual</button>
+            <button type="button" class="view-btn" id="btn-json" onclick="switchEditorMode('json')" title="Switch to raw JSON editor">JSON</button>
+        </div>
     </div>
-    <input type="hidden" name="editor_mode" id="editor-mode" value="visual">
+    {{/* 6. Empty-state guidance */}}
+    <p class="muted" style="font-size:.75rem;margin-bottom:.75rem;">Rules filter which tracks appear in this playlist. All top-level rules must match.</p>
 
     <div id="visual-editor">
         <div class="rule-list" id="rule-list"></div>
-        <button type="button" class="tool-btn" style="margin-bottom:1rem;" onclick="addRuleRow('title','contains','')">+ add rule</button>
+        {{/* 5. + add rule / + add group same weight as other tool-btns */}}
+        <div class="rule-add-bar">
+            <button type="button" class="tool-btn" onclick="addRuleRow('title','contains','')" title="Add a flat filter rule">+ add rule</button>
+            <button type="button" class="tool-btn" onclick="addGroup('any',[])" title="Add a grouped rule (any/all)">+ add group</button>
+        </div>
+        {{/* 3. Sort & Limit section header */}}
+        <h2 style="margin-top:1.25rem;margin-bottom:.75rem;">Sort &amp; Limit</h2>
         <div class="form-row">
             <div class="form-group">
-                <label for="sort">Sort</label>
+                <label for="sort">Sort by</label>
                 <select id="sort" name="sort">
-                    <option value="+dateAdded">Date Added &#8593;</option>
-                    <option value="-dateAdded">Date Added &#8595;</option>
-                    <option value="+rating">Rating &#8593;</option>
-                    <option value="-rating">Rating &#8595;</option>
-                    <option value="+playCount">Play Count &#8593;</option>
-                    <option value="-playCount">Play Count &#8595;</option>
-                    <option value="+title">Title &#8593;</option>
-                    <option value="+artist">Artist &#8593;</option>
-                    <option value="+year">Year &#8593;</option>
-                    <option value="">Random</option>
+                    <option value="dateadded">Date Added</option>
+                    <option value="lastplayed">Last Played</option>
+                    <option value="dateloved">Date Favorited</option>
+                    <option value="rating">Rating</option>
+                    <option value="playcount">Play Count</option>
+                    <option value="title">Title</option>
+                    <option value="artist">Artist</option>
+                    <option value="album">Album</option>
+                    <option value="year">Year</option>
+                    <option value="bpm">BPM</option>
+                    <option value="duration">Duration</option>
+                    <option value="random">Random</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="order">Order</label>
+                <select id="order" name="order">
+                    <option value="asc">Ascending &#8593;</option>
+                    <option value="desc">Descending &#8595;</option>
                 </select>
             </div>
             <div class="form-group">
@@ -54,25 +110,128 @@
         </div>
     </div>
 
-    <div class="form-actions">
-        <button type="submit">Save</button>
-        <a class="btn secondary" href="/">Cancel</a>
-    </div>
 </form>
 
 <script>
 var FIELDS = [
     {{- range .Fields -}}
-    {value:"{{.Value}}",label:"{{.Label}}",type:"{{.Type}}"},
+    {value:"{{.Value}}",label:"{{.Label}}",type:"{{.Type}}",group:"{{.Group}}"},
     {{- end -}}
 ];
 var OPERATORS = {
-    text:    [{value:"is",label:"is"},{value:"isNot",label:"is not"},{value:"contains",label:"contains"},{value:"startsWith",label:"starts with"},{value:"endsWith",label:"ends with"}],
-    number:  [{value:"is",label:"="},{value:"isNot",label:"not"},{value:"gt",label:">"},{value:"lt",label:"<"}],
+    text:    [{value:"is",label:"is"},{value:"isNot",label:"is not"},{value:"contains",label:"contains"},{value:"notContains",label:"not contains"},{value:"startsWith",label:"starts with"},{value:"endsWith",label:"ends with"},{value:"inPlaylist",label:"in playlist (ID)"},{value:"notInPlaylist",label:"not in playlist (ID)"}],
+    number:  [{value:"is",label:"="},{value:"isNot",label:"≠"},{value:"gt",label:">"},{value:"lt",label:"<"},{value:"inTheRange",label:"in range (min,max)"}],
     boolean: [{value:"is",label:"is"}],
-    date:    [{value:"before",label:"before"},{value:"after",label:"after"},{value:"inTheLast",label:"in the last"}]
+    date:    [{value:"before",label:"before"},{value:"after",label:"after"},{value:"gt",label:">"},{value:"lt",label:"<"},{value:"inTheLast",label:"in the last (days)"},{value:"notInTheLast",label:"not in the last (days)"},{value:"inTheRange",label:"in range (YYYY-MM-DD,YYYY-MM-DD)"}]
 };
 var initialRulesJSON = {{.RulesJSON}};
+
+var TEMPLATES = [
+    {
+        name: "Recently Played",
+        all: [{"inTheLast": {"lastplayed": 30}}],
+        sort: "lastplayed", order: "desc", limit: 100
+    },
+    {
+        name: "80s Top Songs",
+        all: [
+            {"any": [{"is": {"loved": true}}, {"gt": {"rating": 3}}]},
+            {"inTheRange": {"year": [1981, 1990]}}
+        ],
+        sort: "year", order: "desc", limit: 25
+    },
+    {
+        name: "Favourites",
+        all: [{"is": {"loved": true}}],
+        sort: "dateloved", order: "desc", limit: 500
+    },
+    {
+        name: "All Songs (Random)",
+        all: [{"gt": {"playcount": -1}}],
+        sort: "random", order: "asc", limit: 1000
+    },
+    {
+        name: "2000s Hits",
+        all: [{"inTheRange": {"year": [2000, 2009]}}],
+        sort: "year", order: "desc", limit: 200
+    },
+    {
+        name: "High-Rated from Library",
+        all: [{"is": {"library_id": 2}}, {"gt": {"rating": 4}}],
+        sort: "rating", order: "desc", limit: 100
+    },
+    // index 6
+    {
+        name: "Recently Added",
+        all: [{"inTheLast": {"dateadded": 30}}],
+        sort: "dateadded", order: "desc", limit: 100
+    },
+    // index 7
+    {
+        name: "Never Played",
+        all: [{"is": {"playcount": 0}}],
+        sort: "dateadded", order: "desc", limit: 200
+    },
+    // index 8
+    {
+        name: "Most Played",
+        all: [{"gt": {"playcount": 10}}],
+        sort: "playcount", order: "desc", limit: 100
+    },
+    // index 9 — loved but not played in the last 6 months
+    {
+        name: "Forgotten Favorites",
+        all: [{"is": {"loved": true}}, {"notInTheLast": {"lastplayed": 180}}],
+        sort: "dateloved", order: "desc", limit: 100
+    },
+    // index 10
+    {
+        name: "Top Rated",
+        all: [{"gt": {"rating": 3}}],
+        sort: "rating", order: "desc", limit: 200
+    },
+    // index 11
+    {
+        name: "High Energy",
+        all: [{"gt": {"bpm": 120}}],
+        sort: "bpm", order: "desc", limit: 200
+    }
+];
+
+function clearRules() {
+    var list = document.getElementById('rule-list');
+    while (list.firstChild) list.removeChild(list.firstChild);
+    var sortEl  = document.getElementById('sort');
+    var orderEl = document.getElementById('order');
+    var limitEl = document.getElementById('limit');
+    if (sortEl)  sortEl.value  = 'dateadded';
+    if (orderEl) orderEl.value = 'asc';
+    if (limitEl) limitEl.value = 0;
+    var nameEl    = document.getElementById('sname');
+    var commentEl = document.getElementById('scomment');
+    if (nameEl)    nameEl.value    = '';
+    if (commentEl) commentEl.value = '';
+}
+
+function loadTemplate(key) {
+    if (key === '') return;
+    var tpl = TEMPLATES[parseInt(key, 10)];
+    if (!tpl) return;
+    loadRulesIntoList(tpl.all, document.getElementById('rule-list'));
+    var sortEl  = document.getElementById('sort');
+    var orderEl = document.getElementById('order');
+    var limitEl = document.getElementById('limit');
+    if (sortEl)  sortEl.value  = tpl.sort  || 'dateadded';
+    if (orderEl) orderEl.value = tpl.order || 'asc';
+    if (limitEl) limitEl.value = tpl.limit !== undefined ? tpl.limit : 0;
+    var nameEl = document.getElementById('sname');
+    if (nameEl && tpl.name && {{if .IsNew}}true{{else}}false{{end}}) nameEl.value = tpl.name;
+}
+
+function smartFormSubmit() {
+    document.getElementById('rules-json-area').value = visualToJSON();
+    document.getElementById('editor-mode').value = 'json';
+}
 </script>
 <script src="/static/rule-builder.js"></script>
 {{end}}

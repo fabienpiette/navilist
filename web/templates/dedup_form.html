@@ -1,0 +1,85 @@
+{{template "base.html" .}}
+{{define "content"}}
+<div class="page-title">
+    <a class="back-arrow" href="/" title="Back to playlist list">&#8592;</a>
+    <h2>Duplicate Playlists</h2>
+</div>
+
+<form method="POST" action="/playlists/dedup/confirm" id="dedup-form">
+    <div class="toolbar toolbar-sep">
+        <p class="muted" style="font-size:.75rem;margin-bottom:0;">Select which playlist to keep in each group. Unselected duplicates will be deleted.</p>
+        <button type="submit" class="danger" style="margin-left:auto"
+            title="Delete all duplicates except the kept ones"
+            onclick="return confirm('Delete all unchosen duplicates?')">delete duplicates</button>
+    </div>
+
+    {{range $i, $g := .Groups}}
+    <div class="dedup-group">
+        <p class="muted" style="margin:0 0 .5rem;font-size:.85rem;">
+            Group {{add $i 1}} &mdash; {{$g.SongCount}} track{{if ne $g.SongCount 1}}s{{end}}
+        </p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:2rem;">Keep</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th class="mono">Tracks</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><input type="radio" name="keep_{{$i}}" value="__none__" checked
+                        onchange="dedupUpdateDeletes()"></td>
+                    <td colspan="4" class="muted" style="font-style:italic;">keep all &mdash; do nothing</td>
+                </tr>
+                {{range $j, $p := $g.Playlists}}
+                <tr>
+                    <td><input type="radio" name="keep_{{$i}}" value="{{$p.ID}}"
+                        onchange="dedupUpdateDeletes()"></td>
+                    <td>{{$p.Name}}</td>
+                    <td>{{if $p.IsSmart}}smart{{else}}m3u{{end}}</td>
+                    <td class="mono">{{$p.SongCount}}</td>
+                    <td class="muted">{{$p.CreatedAt.Format "2006-01-02"}}</td>
+                </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {{end}}
+
+    <div id="delete-inputs"></div>
+</form>
+
+<script>
+var GROUPS = [
+    {{range $i, $g := .Groups}}
+    { idx: {{$i}}, ids: [{{range $g.Playlists}}"{{.ID}}",{{end}}] },
+    {{end}}
+];
+
+function dedupUpdateDeletes() {
+    var container = document.getElementById('delete-inputs');
+    container.innerHTML = '';
+    GROUPS.forEach(function(g) {
+        var keepRadio = document.querySelector('input[name="keep_' + g.idx + '"]:checked');
+        var keepId = keepRadio ? keepRadio.value : '__none__';
+        if (keepId === '__none__') return;
+        g.ids.forEach(function(id) {
+            if (id !== keepId) {
+                var inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.name = 'delete';
+                inp.value = id;
+                container.appendChild(inp);
+            }
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', dedupUpdateDeletes);
+</script>
+{{end}}

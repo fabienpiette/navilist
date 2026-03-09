@@ -4,16 +4,15 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/user/navidrome-playlists/pkg/navidrome"
+	"github.com/user/navilist/pkg/navidrome"
 )
 
 func (h *Handler) NewPlaylist(w http.ResponseWriter, r *http.Request) {
-	h.tpl.ExecuteTemplate(w, "playlist_form.html", map[string]any{
-		"ActiveTab": "playlists",
-		"Playlist":  navidrome.Playlist{},
-		"Tracks":    nil,
-		"IsNew":     true,
-	})
+	data := h.baseData("playlists")
+	data["Playlist"] = navidrome.Playlist{}
+	data["Tracks"] = nil
+	data["IsNew"] = true
+	h.tpl.ExecuteTemplate(w, "playlist_form.html", data)
 }
 
 func (h *Handler) CreatePlaylist(w http.ResponseWriter, r *http.Request) {
@@ -44,12 +43,11 @@ func (h *Handler) EditPlaylist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tracks, _ := h.nd.GetPlaylistTracks(r.Context(), id)
-	h.tpl.ExecuteTemplate(w, "playlist_form.html", map[string]any{
-		"ActiveTab": "playlists",
-		"Playlist":  p,
-		"Tracks":    tracks,
-		"IsNew":     false,
-	})
+	data := h.baseData("playlists")
+	data["Playlist"] = p
+	data["Tracks"] = tracks
+	data["IsNew"] = false
+	h.tpl.ExecuteTemplate(w, "playlist_form.html", data)
 }
 
 func (h *Handler) UpdatePlaylist(w http.ResponseWriter, r *http.Request) {
