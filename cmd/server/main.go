@@ -50,6 +50,9 @@ func main() {
 	r.Post("/playlists/merge/confirm", h.MergeConfirm)
 	r.Post("/playlists/dedup", h.DedupForm)
 	r.Post("/playlists/dedup/confirm", h.DedupConfirm)
+	r.Post("/playlists/smart-rename", h.SmartRenameForm)
+	r.Post("/playlists/smart-rename/confirm", h.SmartRenameConfirm)
+	r.Get("/playlists/{id}/suggest-name", h.SuggestName)
 	r.Get("/playlists/{id}", h.Detail)
 	r.Get("/playlists/{id}/edit", h.EditPlaylist)
 	r.Post("/playlists/{id}", h.UpdatePlaylist)
@@ -57,6 +60,7 @@ func main() {
 	r.Post("/playlists/{id}/smart", h.UpdateSmart)
 	r.Delete("/playlists/{id}", h.Delete)
 	r.Get("/playlists/{id}/export", h.Export)
+	r.Get("/smart/suggest", h.SuggestField)
 	r.Get("/search", h.Search)
 	r.Get("/import", h.ImportForm)
 	r.Post("/import", h.Import)
@@ -98,6 +102,7 @@ func buildTemplates() *handlers.Templates {
 		"import_form.html":     newPage("import_form.html"),
 		"merge_form.html":      newPage("merge_form.html"),
 		"dedup_form.html":      newPage("dedup_form.html"),
+		"smart_rename_form.html": newPage("smart_rename_form.html"),
 		// Partials — "playlist_table" is defined inside playlist_list.html;
 		// "search_results" is already in the base set.
 		"playlist_table": listSet,
