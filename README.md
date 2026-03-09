@@ -133,4 +133,4 @@ Contributions welcome. Open an issue first for non-trivial changes so we can ali
 
 ## License
 
-[MIT](LICENSE)
+[AGPL-3.0](LICENSE) — if you distribute a modified version, you must release its source under the same terms.
