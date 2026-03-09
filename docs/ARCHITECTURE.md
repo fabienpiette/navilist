@@ -23,7 +23,7 @@ Browser ──HTMX──▶ chi router ──▶ handlers ──▶ navidrome.Cl
 
 ### `cmd/server/`
 
-Entrypoint. Reads env vars (`NAVIDROME_URL`, `NAVIDROME_USER`, `NAVIDROME_PASS`, `PORT`), authenticates, parses the full template set from `web.Files`, wires the chi router, and starts the HTTP server.
+Entrypoint. Reads env vars (`NAVIDROME_URL`, `NAVIDROME_USER`, `NAVIDROME_PASS`, `PORT`), authenticates, builds the per-page template sets via `buildTemplates()`, wires the chi router, and starts the HTTP server.
 
 Key file: `main.go`.
 
@@ -49,13 +49,15 @@ HTTP handler layer. Each file groups related routes:
 
 | File | Routes |
 |------|--------|
-| `handler.go` | `Handler` struct, `New()`, shared `renderError()` |
+| `handler.go` | `Handler` struct, `Templates` dispatcher, `New()`, `renderError()` |
 | `playlists.go` | `List`, `Detail`, `Delete`, `Search` |
 | `edit.go` | `NewPlaylist`, `CreatePlaylist`, `EditPlaylist`, `UpdatePlaylist` |
 | `smart.go` | `NewSmart`, `CreateSmart`, `EditSmart`, `UpdateSmart`, `parseRulesFromForm` |
-| `importexport.go` | `Import`, `ImportConfirm`, `ImportForm`, `Export`, `BatchDelete`, `BatchExport` |
+| `importexport.go` | `Import`, `ImportConfirm`, `ImportForm`, `Export`, `BatchDelete`, `BatchExport`, `DeleteEmpty`, `MergeForm`, `MergeConfirm` |
 
 `renderError` is the only shared helper: it emits an `HX-Trigger: {"showToast":"..."}` header for HTMX partial requests and falls back to `http.Error` for full-page requests.
+
+`Templates` is a dispatcher type that routes `ExecuteTemplate(w, name, data)` calls to the correct per-page cloned template set (see Template Isolation below).
 
 **Architecture Invariant:** handlers never call `html/template` directly — they always go through `h.tpl.ExecuteTemplate`. This keeps template name coupling in one place per handler, not scattered across the file.
 
@@ -70,11 +72,13 @@ The Navidrome REST API client. Handles JWT authentication, token refresh, and al
 | File | Responsibility |
 |------|---------------|
 | `types.go` | All request/response types. `Playlist.IsSmart()` returns `true` when `Rules != nil`. |
-| `client.go` | `Client` struct, `Authenticate()`, `ensureToken()`, `do()` (the one authenticated HTTP method) |
+| `client.go` | `Client` struct, `Authenticate()`, `ensureToken()`, `Do()` (the one authenticated HTTP method) |
 | `playlists.go` | `ListPlaylists`, `GetPlaylist`, `GetPlaylistTracks`, `CreatePlaylist`, `UpdatePlaylist`, `DeletePlaylist`, `AddTracks`, `RemoveTracks` |
 | `songs.go` | `SearchSongs`, `GetSongByPath` |
 
 Key types: `Client`, `Playlist`, `PlaylistRules`, `Rule`, `Song`.
+
+**Authentication note:** Navidrome's REST API uses `X-ND-Authorization: Bearer <token>` (not the standard `Authorization` header). The auth endpoint is `POST /auth/login` (outside the `/api/` prefix). All other endpoints are under `/api/`.
 
 **Architecture Invariant:** `pkg/navidrome/` has no knowledge of HTTP request context beyond `context.Context`. It never reads `http.Request` fields, headers, or form values.
 
@@ -112,7 +116,7 @@ Key types: `Track`, `WriteTrack`.
 
 **Testing.** Tests live in `pkg/navidrome/client_test.go` (4 tests, `package navidrome_test`) and `internal/m3u/parser_test.go` (6 tests, `package m3u_test`). Handler tests are not present — the handlers are thin wrappers and their correctness is verified by integration against a live Navidrome instance. The `navidrome` tests use `httptest.NewServer` as a mock.
 
-**Template parsing.** All templates are parsed once at startup from `web.Files` in `cmd/server/main.go`. A parse failure is fatal (`template.Must`). Templates are never re-parsed per request.
+**Template isolation.** Go's `html/template` uses a flat namespace: all `{{define "name"}}` blocks across all files parsed into the same set share the same name registry, so the last file parsed wins. To prevent every page from rendering the same `content` block, `buildTemplates()` in `cmd/server/main.go` clones the base template set once per page using `template.Clone()` and parses each page into its own clone. The `Templates` dispatcher in `handler.go` routes `ExecuteTemplate(w, name, data)` calls to the correct clone by template name.
 
 ## A Typical Change
 
@@ -124,3 +128,9 @@ Key types: `Track`, `WriteTrack`.
 4. Run `go test ./...` and smoke-test against a live Navidrome instance.
 
 No other files need to change. The `navidrome.Client` sends whatever fields are set in the request struct; Navidrome ignores absent fields.
+
+**Adding a new batch operation** (e.g., the merge feature):
+
+1. `internal/handlers/importexport.go` — add handler functions.
+2. `cmd/server/main.go` — register routes and add any new page template to `buildTemplates()`.
+3. `web/templates/` — add the new page template; add a trigger button to `playlist_list.html` if needed.

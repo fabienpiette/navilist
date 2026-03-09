@@ -25,9 +25,9 @@ clean:
 	rm -f $(BINARY_NAME) coverage.out coverage.html
 	rm -rf $(BIN_DIR)
 
-## Run the server locally (requires env vars or a .env file)
+## Run the server locally (loads .env if present)
 run:
-	go run $(LDFLAGS) ./cmd/server
+	@set -a && [ -f .env ] && . ./.env; set +a && go run $(LDFLAGS) ./cmd/server
 
 ## Format all Go source files
 fmt:

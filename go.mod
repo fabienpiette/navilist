@@ -1,4 +1,4 @@
-module github.com/user/navidrome-playlists
+module github.com/user/navilist
 
 go 1.25.3
 
