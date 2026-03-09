@@ -5,7 +5,8 @@
 <div class="toolbar">
     <input type="search" id="playlist-search" placeholder="search playlists…"
         style="padding:.375rem .625rem;font-size:.75rem;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-family:inherit;width:16rem;"
-        oninput="filterPlaylists(this.value)" title="Filter playlists by name">
+        oninput="filterPlaylists(this.value);sessionStorage.setItem('playlist-search',this.value)"
+        title="Filter playlists by name">
     <button class="tool-btn" hx-get="/" hx-target="#playlist-table" hx-swap="innerHTML" title="Refresh the list">
         <span class="spin-icon">&#8635;</span> refresh
     </button>
@@ -49,6 +50,15 @@
     </table>
 </div>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    var saved = sessionStorage.getItem('playlist-search') || '';
+    if (saved) {
+        var input = document.getElementById('playlist-search');
+        input.value = saved;
+        filterPlaylists(saved);
+    }
+});
+
 function filterPlaylists(q) {
     var needle = q.trim().toLowerCase();
     document.querySelectorAll('#playlist-table tr[id]').forEach(function(row) {
