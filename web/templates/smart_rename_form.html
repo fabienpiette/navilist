@@ -8,6 +8,7 @@
             <thead>
                 <tr>
                     <th>Current Name</th>
+                    <th style="width:2rem;"></th>
                     <th>New Name</th>
                 </tr>
             </thead>
@@ -15,6 +16,12 @@
             {{range .Rows}}
             <tr>
                 <td class="muted">{{.CurrentName}}</td>
+                <td style="text-align:center;padding:0 .25rem;">
+                    <button type="button"
+                        onclick="var r=this.closest('tr');r.querySelector('[name=name]').value=r.querySelector('[name=current]').value"
+                        style="background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:.25rem;"
+                        title="Copy current name to new name">&#8594;</button>
+                </td>
                 <td>
                     <input type="hidden" name="id" value="{{.ID}}">
                     <input type="hidden" name="current" value="{{.CurrentName}}">
@@ -22,14 +29,9 @@
                     <input type="text" name="name" value="{{.Suggested}}"
                         style="width:100%;" title="Edit the suggested name">
                     {{else}}
-                    <div style="display:flex;gap:.5rem;align-items:center;">
-                        <input type="text" name="name" value=""
-                            placeholder="mixed — no suggestion" style="flex:1;"
-                            title="No suggestion: playlist tracks are too mixed">
-                        <button type="button" class="tool-btn"
-                            onclick="this.closest('td').querySelector('[name=name]').value=this.closest('td').querySelector('[name=current]').value"
-                            title="Copy original name into the field">original</button>
-                    </div>
+                    <input type="text" name="name" value=""
+                        placeholder="mixed — no suggestion" style="width:100%;"
+                        title="No suggestion: playlist tracks are too mixed">
                     {{end}}
                 </td>
             </tr>
