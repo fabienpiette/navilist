@@ -62,7 +62,6 @@ type AddTracksRequest struct {
 	IDs []string `json:"ids"`
 }
 
-
 type authRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`

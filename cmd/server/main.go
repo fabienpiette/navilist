@@ -95,13 +95,13 @@ func buildTemplates() *handlers.Templates {
 
 	return handlers.NewTemplates(map[string]*template.Template{
 		// Full-page templates — each in its own isolated clone.
-		"playlist_list.html":   listSet,
-		"playlist_detail.html": newPage("playlist_detail.html"),
-		"playlist_form.html":   newPage("playlist_form.html"),
-		"smart_form.html":      newPage("smart_form.html"),
-		"import_form.html":     newPage("import_form.html"),
-		"merge_form.html":      newPage("merge_form.html"),
-		"dedup_form.html":      newPage("dedup_form.html"),
+		"playlist_list.html":     listSet,
+		"playlist_detail.html":   newPage("playlist_detail.html"),
+		"playlist_form.html":     newPage("playlist_form.html"),
+		"smart_form.html":        newPage("smart_form.html"),
+		"import_form.html":       newPage("import_form.html"),
+		"merge_form.html":        newPage("merge_form.html"),
+		"dedup_form.html":        newPage("dedup_form.html"),
 		"smart_rename_form.html": newPage("smart_rename_form.html"),
 		// Partials — "playlist_table" is defined inside playlist_list.html;
 		// "search_results" is already in the base set.
