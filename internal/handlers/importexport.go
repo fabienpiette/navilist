@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"archive/zip"
+	"fmt"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -293,13 +294,15 @@ func (h *Handler) DedupForm(w http.ResponseWriter, r *http.Request) {
 			log.Printf("dedup: get tracks id=%s %q: %v", id, p.Name, err)
 			continue
 		}
-		songIDs := make([]string, len(tracks))
+		tokens := make([]string, len(tracks))
 		for i, t := range tracks {
-			songIDs[i] = t.ID
+			// Round duration to nearest 5s to tolerate minor encoding differences.
+			dur := int(t.Duration/5+0.5) * 5
+			tokens[i] = strings.ToLower(t.Title) + "|" + strings.ToLower(t.Artist) + "|" + fmt.Sprintf("%d", dur)
 		}
-		sort.Strings(songIDs)
-		fp := strings.Join(songIDs, ",")
-		log.Printf("dedup: %q has %d tracks (fp=%s...)", p.Name, len(tracks), fp[:min(len(fp), 32)])
+		sort.Strings(tokens)
+		fp := strings.Join(tokens, ",")
+		log.Printf("dedup: %q — %d tracks fingerprinted by title+artist+duration", p.Name, len(tracks))
 		byFingerprint[fp] = append(byFingerprint[fp], p)
 	}
 
