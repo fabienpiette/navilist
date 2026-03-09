@@ -130,6 +130,25 @@ footer { padding-top:1rem; border-top:1px solid var(--border); font-size:.75rem;
 .star-btn { margin-left:.5rem; padding:.15rem .4rem; font-size:.7rem; color:var(--muted); border:1px solid var(--border); border-radius:3px; text-decoration:none; transition:all .15s; }
 .star-btn:hover { color:#f0a500; border-color:#f0a500; background:rgba(240,165,0,.1); }
 
+/* Responsive */
+@media (max-width:768px) {
+    main { padding:1rem .75rem .75rem; height:auto; min-height:100vh; }
+    .content { overflow-y:visible; }
+    header { flex-wrap:wrap; gap:.75rem; }
+    .tab-bar { order:3; width:100%; }
+    h1 { font-size:1.1rem; }
+    .toolbar { flex-wrap:wrap; }
+    .toolbar-search { width:100% !important; }
+    .filter-pills { flex-wrap:wrap; }
+    .filter-pill { border-right:1px solid var(--border); margin-bottom:-1px; }
+    .form-row { flex-direction:column; gap:0; }
+    .rule-row { flex-wrap:wrap; }
+    td { padding:.625rem .5rem; }
+    th { padding:.5rem; }
+    .action-group { flex-wrap:wrap; }
+    .toast { left:1rem; right:1rem; bottom:1rem; }
+}
+
 /* Misc */
 .empty { color:var(--muted); font-style:italic; padding:2rem 0; text-align:center; }
 .muted { color:var(--muted); }
