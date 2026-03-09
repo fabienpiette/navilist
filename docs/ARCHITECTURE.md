@@ -50,10 +50,11 @@ HTTP handler layer. Each file groups related routes:
 | File | Routes |
 |------|--------|
 | `handler.go` | `Handler` struct, `Templates` dispatcher, `New()`, `renderError()` |
-| `playlists.go` | `List`, `Detail`, `Delete`, `Search` |
+| `playlists.go` | `List`, `Detail`, `Delete`, `Search`, `BatchDelete`, `DeleteEmpty` |
 | `edit.go` | `NewPlaylist`, `CreatePlaylist`, `EditPlaylist`, `UpdatePlaylist` |
-| `smart.go` | `NewSmart`, `CreateSmart`, `EditSmart`, `UpdateSmart`, `parseRulesFromForm` |
-| `importexport.go` | `Import`, `ImportConfirm`, `ImportForm`, `Export`, `BatchDelete`, `BatchExport`, `DeleteEmpty`, `MergeForm`, `MergeConfirm` |
+| `smart.go` | `NewSmart`, `CreateSmart`, `EditSmart`, `UpdateSmart`, `SuggestField`, `parseRulesFromForm` |
+| `importexport.go` | `ImportForm`, `Import`, `ImportConfirm`, `Export`, `BatchExport`, `MergeForm`, `MergeConfirm`, `DedupForm`, `DedupConfirm` |
+| `rename.go` | `SmartRenameForm`, `SmartRenameConfirm`, `SuggestName` |
 
 `renderError` is the only shared helper: it emits an `HX-Trigger: {"showToast":"..."}` header for HTMX partial requests and falls back to `http.Error` for full-page requests.
 
@@ -74,7 +75,7 @@ The Navidrome REST API client. Handles JWT authentication, token refresh, and al
 | `types.go` | All request/response types. `Playlist.IsSmart()` returns `true` when `Rules != nil`. |
 | `client.go` | `Client` struct, `Authenticate()`, `ensureToken()`, `Do()` (the one authenticated HTTP method) |
 | `playlists.go` | `ListPlaylists`, `GetPlaylist`, `GetPlaylistTracks`, `CreatePlaylist`, `UpdatePlaylist`, `DeletePlaylist`, `AddTracks`, `RemoveTracks` |
-| `songs.go` | `SearchSongs`, `GetSongByPath` |
+| `songs.go` | `SearchSongs`, `GetSongByPath`, `SearchArtists`, `SearchAlbums`, `SearchGenres` |
 
 Key types: `Client`, `Playlist`, `PlaylistRules`, `Rule`, `Song`.
 
@@ -114,7 +115,7 @@ Key types: `Track`, `WriteTrack`.
 
 **Configuration.** All configuration is via environment variables read at startup in `cmd/server/main.go`. There is no config file. Missing required vars (`NAVIDROME_URL`, `NAVIDROME_USER`, `NAVIDROME_PASS`) cause a fatal exit with a descriptive message.
 
-**Testing.** Tests live in `pkg/navidrome/client_test.go` (4 tests, `package navidrome_test`) and `internal/m3u/parser_test.go` (6 tests, `package m3u_test`). Handler tests are not present — the handlers are thin wrappers and their correctness is verified by integration against a live Navidrome instance. The `navidrome` tests use `httptest.NewServer` as a mock.
+**Testing.** Tests live in `pkg/navidrome/client_test.go` (7 tests, `package navidrome_test`), `internal/m3u/parser_test.go` (6 tests, `package m3u_test`), and `internal/handlers/rename_test.go` (6 tests, `package handlers_test`). Handler tests are not present for most handlers — they are thin wrappers verified by integration against a live Navidrome instance. The `navidrome` and `rename` tests use `httptest.NewServer` as a mock.
 
 **Template isolation.** Go's `html/template` uses a flat namespace: all `{{define "name"}}` blocks across all files parsed into the same set share the same name registry, so the last file parsed wins. To prevent every page from rendering the same `content` block, `buildTemplates()` in `cmd/server/main.go` clones the base template set once per page using `template.Clone()` and parses each page into its own clone. The `Templates` dispatcher in `handler.go` routes `ExecuteTemplate(w, name, data)` calls to the correct clone by template name.
 
@@ -127,10 +128,12 @@ Key types: `Track`, `WriteTrack`.
 3. `web/templates/playlist_form.html` — add `<input type="checkbox" name="public" ...>` to the form, checking `.Playlist.Public` for the edit case.
 4. Run `go test ./...` and smoke-test against a live Navidrome instance.
 
-No other files need to change. The `navidrome.Client` sends whatever fields are set in the request struct; Navidrome ignores absent fields.
+No other files need to change.
 
-**Adding a new batch operation** (e.g., the merge feature):
+**Adding a new smart playlist rule field** (e.g., making `mood` autocomplete-capable):
 
-1. `internal/handlers/importexport.go` — add handler functions.
-2. `cmd/server/main.go` — register routes and add any new page template to `buildTemplates()`.
-3. `web/templates/` — add the new page template; add a trigger button to `playlist_list.html` if needed.
+1. `internal/handlers/smart.go` — add `"mood"` to the `ndSongFields` slice and extend the `switch` in `SuggestField` to handle it.
+2. `pkg/navidrome/songs.go` — add a `SearchMoods` method following the pattern of `SearchGenres`.
+3. `web/static/rule-builder.js` — add `"mood"` to the `AC_FIELDS` array.
+
+No template changes needed; the field appears automatically in the grouped select.

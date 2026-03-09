@@ -4,7 +4,11 @@
   <img src="docs/demo.png" alt="" width="600">
 </p>
 
-<h3 align="center">Self-hosted web UI for managing Navidrome M3U playlists and Smart Playlists — no filesystem access required.</h3>
+<p align="center">
+  <a href="https://github.com/fabienpiette/navilist/actions/workflows/ci.yml"><img src="https://github.com/fabienpiette/navilist/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+</p>
+
+<h3 align="center">Self-hosted web UI for managing Navidrome playlists — M3U editor, smart rule builder, dedup, merge, and bulk ops. No filesystem access required.</h3>
 
 ---
 
@@ -14,8 +18,7 @@
 # Clone and configure
 git clone https://github.com/fabienpiette/navilist.git
 cd navilist
-cp docker-compose.yml docker-compose.override.yml
-# Edit docker-compose.override.yml: set NAVIDROME_URL, NAVIDROME_USER, NAVIDROME_PASS
+# Edit docker-compose.yml: set NAVIDROME_URL, NAVIDROME_USER, NAVIDROME_PASS
 
 # Run
 docker compose up -d
@@ -37,19 +40,21 @@ go run ./cmd/server
 
 ## Features
 
+- **Smart playlist builder** — visual rule editor with 40+ filterable fields, live autocomplete for genre/artist/album, 12 preset templates, raw NSP JSON fallback
 - **M3U playlist editor** — create and edit playlists with live search-as-you-type track search
-- **Smart playlist builder** — visual rule editor (field / operator / value) with raw JSON fallback for the full NSP format
-- **M3U import** — upload a `.m3u` file and get a match report: exact path lookup, then title fuzzy-search for unmatched entries
-- **Merge playlists** — select two or more playlists, combine their tracks (deduplicated), optionally delete the sources
-- **Batch ops** — delete selected, delete all empty, or export multiple playlists as a single `.zip` in one click
-- **Dark mode** — theme toggle stored in `localStorage`; no cookies, no server round-trip
+- **Dedup** — find playlists with identical track lists, pick which to keep, delete the rest in one click
+- **Merge** — combine two or more playlists into one (tracks deduplicated); optionally delete the sources
+- **Smart rename** — suggest `Artist – Album` names based on track metadata; edit before applying
+- **M3U import** — upload a `.m3u` file, get a match report (exact path → title fuzzy fallback), confirm to create
+- **Batch ops** — delete selected, delete all empty, export multiple playlists as a `.zip`
 - **Single binary** — all templates and static assets embedded; no volume mounts needed in Docker
+- **Dark mode** — stored in `localStorage`; no cookies, no server round-trip
 
 ## Install
 
-**Prerequisites:** a running [Navidrome](https://www.navidrome.org/) instance (v0.50+), Docker or Go 1.22+.
+**Prerequisites:** a running [Navidrome](https://www.navidrome.org/) instance (v0.50+). Docker or Go 1.22+.
 
-> **Note:** the Navidrome account used must have **admin** privileges. Non-admin accounts can only see public playlists and their own — not the full library.
+> **Note:** the Navidrome account must have **admin** privileges. Non-admin accounts can only see public playlists and their own.
 
 ### Docker Compose (recommended)
 
@@ -95,21 +100,26 @@ NAVIDROME_PASS=secret                 # Navidrome password
 PORT=8080                             # Listening port (default: 8080)
 ```
 
-**Playlist list** (`/`) — filter by All / M3U / Smart, inline delete, batch delete/export, merge selected, delete all empty.
+**Playlist list** (`/`) — filter by All / M3U / Smart, client-side search, inline delete, batch delete/export, merge selected, dedup selected, smart rename selected, delete all empty.
 
 **New M3U** (`/playlists/new`) — type a name, search tracks, reorder with drag, save.
 
-**New Smart** (`/playlists/new/smart`) — add rules visually or paste NSP JSON directly; set sort field and limit.
+**New Smart** (`/playlists/new/smart`) — add rules visually or paste NSP JSON directly; set sort field and limit. In a rule row, set field to genre/artist/album for live autocomplete suggestions.
 
 **Import** (`/import`) — upload a `.m3u` file; review the match report; confirm to create the playlist.
 
-**Merge** — check two or more playlists on the list page, click "merge selected", name the result, optionally delete sources.
+**Merge** — check two or more playlists, click **merge selected**, name the result, optionally delete sources.
+
+**Dedup** — check two or more playlists, click **find duplicates**; for each group of identical playlists choose which to keep.
+
+**Smart rename** — check smart playlists, click **smart rename**; suggested names are derived from track metadata; edit before applying.
 
 ## Known Issues
 
 - Smart playlists require Navidrome v0.50+ (earlier versions don't expose the `rules` field via `/api/playlist`).
 - The M3U import fuzzy-match uses title search only; tracks with identical titles may match the wrong song.
 - No authentication layer — intended for private/LAN use only. Do not expose port 8080 to the internet without a reverse proxy with auth.
+- Genre autocomplete fetches the full genre list on each keystroke (Navidrome has no server-side genre filter); performance degrades with very large genre libraries.
 
 ## Documentation
 
