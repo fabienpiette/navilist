@@ -37,6 +37,7 @@ button.danger:hover:not([disabled]) { background:var(--error); border-color:var(
 
 /* Tool buttons */
 .tool-btn { display:inline-flex; align-items:center; gap:.375rem; padding:.375rem .625rem; font-size:.75rem; background:transparent; border:1px solid var(--border); color:var(--muted); cursor:pointer; transition:color .15s,border-color .15s; font-family:inherit; text-decoration:none; }
+.toolbar-search { padding:.375rem .625rem; font-size:.75rem; border:1px solid var(--border); background:var(--bg); color:var(--fg); font-family:inherit; line-height:1.5; box-sizing:border-box; }
 .tool-btn:hover { color:var(--fg); border-color:var(--fg); opacity:1; }
 .spin-icon { display:inline-block; }
 .spinning .spin-icon { animation:spin .8s linear infinite; }

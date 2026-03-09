@@ -4,7 +4,7 @@
 
 <div class="toolbar">
     <input type="search" id="playlist-search" placeholder="search playlists…"
-        style="padding:.375rem .625rem;font-size:.75rem;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-family:inherit;width:16rem;"
+        class="toolbar-search" style="width:16rem;"
         oninput="filterPlaylists(this.value);sessionStorage.setItem('playlist-search',this.value)"
         title="Filter playlists by name">
     <button class="tool-btn" hx-get="/" hx-target="#playlist-table" hx-swap="innerHTML" title="Refresh the list">
