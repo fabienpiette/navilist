@@ -1,21 +1,29 @@
 {{template "base.html" .}}
 
 {{define "content"}}
-<h2>Playlists <span class="muted">{{.Total}} total &middot; {{.Smart}} smart</span></h2>
 
 <div class="toolbar">
-    <button class="tool-btn" hx-get="/" hx-target="#playlist-table" hx-swap="innerHTML">
+    <button class="tool-btn" hx-get="/" hx-target="#playlist-table" hx-swap="innerHTML" title="Refresh the list">
         <span class="spin-icon">&#8635;</span> refresh
     </button>
-    <a class="tool-btn" href="/playlists/new">+ M3U</a>
-    <a class="tool-btn" href="/playlists/new/smart">+ Smart</a>
-    <button class="tool-btn danger" type="submit" form="batch-form" onclick="return confirm('Delete selected playlists?')">batch delete</button>
+    <a class="tool-btn" href="/playlists/new" title="Create a new M3U playlist">+ M3U</a>
+    <a class="tool-btn" href="/playlists/new/smart" title="Create a new Smart playlist">+ Smart</a>
+    <button class="tool-btn danger" type="submit" form="batch-form" onclick="return confirm('Delete selected playlists?')" title="Delete all checked playlists">batch delete</button>
+    <button class="tool-btn" onclick="submitMerge(event)" title="Merge checked playlists into a new one">merge selected</button>
+    <button class="tool-btn" onclick="submitDedup(event)" title="Find duplicate playlists among checked">find duplicates</button>
+    {{if .Empty}}
+    <button class="tool-btn danger"
+        hx-post="/playlists/batch/delete-empty"
+        hx-confirm="Delete all {{.Empty}} empty playlist(s)?"
+        hx-on::after-request="window.location='/'"
+        title="Delete all playlists with zero tracks">delete empty ({{.Empty}})</button>
+    {{end}}
 </div>
 
 <div class="filter-pills">
-    <a class="filter-pill {{if eq .Filter "all"}}active{{end}}" href="/?filter=all">all</a>
-    <a class="filter-pill {{if eq .Filter "m3u"}}active{{end}}" href="/?filter=m3u">m3u</a>
-    <a class="filter-pill {{if eq .Filter "smart"}}active{{end}}" href="/?filter=smart">smart</a>
+    <a class="filter-pill {{if eq .Filter "all"}}active{{end}}" href="/?filter=all" title="Show all playlists">all ({{.Total}})</a>
+    <a class="filter-pill {{if eq .Filter "m3u"}}active{{end}}" href="/?filter=m3u" title="Show M3U playlists only">m3u ({{.M3u}})</a>
+    <a class="filter-pill {{if eq .Filter "smart"}}active{{end}}" href="/?filter=smart" title="Show Smart playlists only">smart ({{.Smart}})</a>
 </div>
 
 <form method="POST" action="/playlists/batch/delete" id="batch-form"></form>
@@ -25,9 +33,9 @@
         <thead>
             <tr>
                 <th style="width:2rem"><input type="checkbox" id="select-all" title="Select all"></th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Tracks</th>
+                <th class="sortable" data-sort="name" title="Sort by name">Name</th>
+                <th class="sortable" data-sort="type" title="Sort by type">Type</th>
+                <th class="sortable" data-sort="tracks" title="Sort by track count">Tracks</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -40,33 +48,109 @@
 document.getElementById('select-all').addEventListener('change', function() {
     document.querySelectorAll('.row-cb').forEach(function(cb) { cb.checked = this.checked; }, this);
 });
+
+function submitMerge(e) {
+    e.preventDefault();
+    var checked = document.querySelectorAll('.row-cb:checked');
+    if (checked.length < 2) {
+        alert('Select at least 2 playlists to merge.');
+        return;
+    }
+    var f = document.createElement('form');
+    f.method = 'POST';
+    f.action = '/playlists/merge';
+    checked.forEach(function(cb) {
+        var inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'ids';
+        inp.value = cb.value;
+        f.appendChild(inp);
+    });
+    document.body.appendChild(f);
+    f.submit();
+}
+
+function submitDedup(e) {
+    e.preventDefault();
+    var checked = document.querySelectorAll('.row-cb:checked');
+    if (checked.length < 2) {
+        alert('Select at least 2 playlists to scan for duplicates.');
+        return;
+    }
+    var f = document.createElement('form');
+    f.method = 'POST';
+    f.action = '/playlists/dedup';
+    checked.forEach(function(cb) {
+        var inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'ids';
+        inp.value = cb.value;
+        f.appendChild(inp);
+    });
+    document.body.appendChild(f);
+    f.submit();
+}
+
+(function() {
+    var sortState = { col: null, dir: 1 };
+
+    document.querySelectorAll('th[data-sort]').forEach(function(th) {
+        th.addEventListener('click', function() {
+            var col = th.dataset.sort;
+            sortState.dir = sortState.col === col ? sortState.dir * -1 : 1;
+            sortState.col = col;
+            sortRows(col, sortState.dir);
+            document.querySelectorAll('th[data-sort]').forEach(function(h) { delete h.dataset.dir; });
+            th.dataset.dir = sortState.dir === 1 ? 'asc' : 'desc';
+        });
+    });
+
+    function cellValue(row, col) {
+        switch (col) {
+            case 'name':   return row.querySelector('td:nth-child(2) a').textContent.trim().toLowerCase();
+            case 'type':   return row.querySelector('td:nth-child(3)').textContent.trim();
+            case 'tracks': return row.querySelector('td:nth-child(4)').textContent.trim().padStart(10, '0');
+        }
+        return '';
+    }
+
+    function sortRows(col, dir) {
+        var tbody = document.getElementById('playlist-table');
+        var rows = Array.from(tbody.querySelectorAll('tr[id]'));
+        rows.sort(function(a, b) {
+            return cellValue(a, col).localeCompare(cellValue(b, col), undefined, {numeric: true}) * dir;
+        });
+        rows.forEach(function(r) { tbody.appendChild(r); });
+    }
+})();
 </script>
 {{end}}
 
 {{define "playlist_table"}}
 {{range .Playlists}}
 <tr id="row-{{.ID}}">
-    <td><input type="checkbox" class="row-cb" name="ids" value="{{.ID}}" form="batch-form"></td>
+    <td><input type="checkbox" class="row-cb" name="ids" value="{{.ID}}" form="batch-form" title="Select {{.Name}}"></td>
     <td>
-        <a href="/playlists/{{.ID}}">{{.Name}}</a>
+        <a href="/playlists/{{.ID}}" title="View {{.Name}}">{{.Name}}</a>
         {{if .IsSmart}}<span class="badge-smart">smart</span>{{else}}<span class="badge-m3u">m3u</span>{{end}}
     </td>
     <td class="muted">{{if .IsSmart}}smart{{else}}m3u{{end}}</td>
     <td class="mono">{{.SongCount}}</td>
     <td>
         <div class="action-group">
-            <a class="action-btn" href="/playlists/{{.ID}}">view</a>
+            <a class="action-btn" href="/playlists/{{.ID}}" title="View tracks in {{.Name}}">view</a>
             {{if .IsSmart}}
-            <a class="action-btn" href="/playlists/{{.ID}}/edit/smart">edit</a>
+            <a class="action-btn" href="/playlists/{{.ID}}/edit/smart" title="Edit smart rules for {{.Name}}">edit</a>
             {{else}}
-            <a class="action-btn" href="/playlists/{{.ID}}/edit">edit</a>
-            <a class="action-btn" href="/playlists/{{.ID}}/export">export</a>
+            <a class="action-btn" href="/playlists/{{.ID}}/edit" title="Edit tracks in {{.Name}}">edit</a>
+            <a class="action-btn" href="/playlists/{{.ID}}/export" title="Download {{.Name}} as .m3u">export</a>
             {{end}}
             <button class="action-btn danger"
                 hx-delete="/playlists/{{.ID}}"
                 hx-target="#row-{{.ID}}"
                 hx-swap="outerHTML"
-                hx-confirm="Delete {{.Name}}?">delete</button>
+                hx-confirm="Delete {{.Name}}?"
+                title="Delete {{.Name}}">delete</button>
         </div>
     </td>
 </tr>

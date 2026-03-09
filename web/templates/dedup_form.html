@@ -1,0 +1,79 @@
+{{template "base.html" .}}
+{{define "content"}}
+<h2>Duplicate Playlists</h2>
+
+<form method="POST" action="/playlists/dedup/confirm" id="dedup-form">
+    {{range $i, $g := .Groups}}
+    <div class="dedup-group">
+        <p class="muted" style="margin:0 0 .5rem;font-size:.85rem;">
+            Group {{add $i 1}} &mdash; {{$g.SongCount}} track{{if ne $g.SongCount 1}}s{{end}}
+        </p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:2rem;">Keep</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th class="mono">Tracks</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {{range $j, $p := $g.Playlists}}
+                <tr>
+                    <td><input type="radio" name="keep_{{$i}}" value="{{$p.ID}}"
+                        {{if eq $j 0}}checked{{end}}
+                        onchange="dedupUpdateDeletes()"></td>
+                    <td>{{$p.Name}}</td>
+                    <td>{{if $p.IsSmart}}smart{{else}}m3u{{end}}</td>
+                    <td class="mono">{{$p.SongCount}}</td>
+                    <td class="muted">{{$p.CreatedAt.Format "2006-01-02"}}</td>
+                </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {{end}}
+
+    <div id="delete-inputs"></div>
+
+    <div class="form-actions" style="margin-top:1.5rem;">
+        <button type="submit" class="danger" title="Delete all duplicates except the kept ones"
+            onclick="return confirm('Delete all unchosen duplicates?')">
+            Delete Duplicates
+        </button>
+        <a class="btn secondary" href="/" title="Cancel">Cancel</a>
+    </div>
+</form>
+
+<script>
+var GROUPS = [
+    {{range $i, $g := .Groups}}
+    { idx: {{$i}}, ids: [{{range $g.Playlists}}"{{.ID}}",{{end}}] },
+    {{end}}
+];
+
+function dedupUpdateDeletes() {
+    var container = document.getElementById('delete-inputs');
+    container.innerHTML = '';
+    GROUPS.forEach(function(g) {
+        var keepRadio = document.querySelector('input[name="keep_' + g.idx + '"]:checked');
+        var keepId = keepRadio ? keepRadio.value : g.ids[0];
+        g.ids.forEach(function(id) {
+            if (id !== keepId) {
+                var inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.name = 'delete';
+                inp.value = id;
+                container.appendChild(inp);
+            }
+        });
+    });
+}
+
+// Initialise on load.
+document.addEventListener('DOMContentLoaded', dedupUpdateDeletes);
+</script>
+{{end}}
