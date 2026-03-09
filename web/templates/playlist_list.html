@@ -25,9 +25,9 @@
 </div>
 
 <div class="filter-pills">
-    <a class="filter-pill {{if eq .Filter "all"}}active{{end}}" href="/?filter=all" title="Show all playlists">all ({{.Total}})</a>
-    <a class="filter-pill {{if eq .Filter "m3u"}}active{{end}}" href="/?filter=m3u" title="Show M3U playlists only">m3u ({{.M3u}})</a>
-    <a class="filter-pill {{if eq .Filter "smart"}}active{{end}}" href="/?filter=smart" title="Show Smart playlists only">smart ({{.Smart}})</a>
+    <a class="filter-pill {{if eq .Filter "all"}}active{{end}}" href="/?filter=all" title="Show all playlists" data-pill="all">all (<span id="count-all">{{.Total}}</span>)</a>
+    <a class="filter-pill {{if eq .Filter "m3u"}}active{{end}}" href="/?filter=m3u" title="Show M3U playlists only" data-pill="m3u">m3u (<span id="count-m3u">{{.M3u}}</span>)</a>
+    <a class="filter-pill {{if eq .Filter "smart"}}active{{end}}" href="/?filter=smart" title="Show Smart playlists only" data-pill="smart">smart (<span id="count-smart">{{.Smart}}</span>)</a>
 </div>
 
 <form method="POST" action="/playlists/batch/delete" id="batch-form"></form>
@@ -61,10 +61,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function filterPlaylists(q) {
     var needle = q.trim().toLowerCase();
+    var counts = { all: 0, m3u: 0, smart: 0 };
     document.querySelectorAll('#playlist-table tr[id]').forEach(function(row) {
         var name = row.querySelector('td:nth-child(2) a').textContent.toLowerCase();
-        row.style.display = needle === '' || name.includes(needle) ? '' : 'none';
+        var visible = needle === '' || name.includes(needle);
+        row.style.display = visible ? '' : 'none';
+        if (visible) {
+            counts.all++;
+            var type = row.querySelector('td:nth-child(3)').textContent.trim();
+            counts[type] = (counts[type] || 0) + 1;
+        }
     });
+    document.getElementById('count-all').textContent = counts.all;
+    document.getElementById('count-m3u').textContent = counts.m3u || 0;
+    document.getElementById('count-smart').textContent = counts.smart || 0;
 }
 
 document.getElementById('select-all').addEventListener('change', function() {
