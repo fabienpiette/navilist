@@ -34,7 +34,9 @@ func suggestName(tracks []navidrome.Song) string {
 		}
 	}
 	if float64(bestCount)/float64(len(tracks)) >= purityThreshold {
-		return best.artist + " - " + best.album
+		artist := strings.ReplaceAll(best.artist, "_", " ")
+		album := strings.ReplaceAll(best.album, "_", " ")
+		return artist + " - " + album
 	}
 	return ""
 }

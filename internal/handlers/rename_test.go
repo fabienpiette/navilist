@@ -77,3 +77,16 @@ func TestSuggestName_MixedArtistSameAlbum(t *testing.T) {
 		t.Errorf("expected empty for mixed artists, got %q", got)
 	}
 }
+
+func TestSuggestName_UnderscoresReplaced(t *testing.T) {
+	tracks := []navidrome.Song{
+		song("Pink_Floyd", "The_Wall"),
+		song("Pink_Floyd", "The_Wall"),
+		song("Pink_Floyd", "The_Wall"),
+	}
+	got := suggestName(tracks)
+	want := "Pink Floyd - The Wall"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
