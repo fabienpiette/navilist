@@ -36,6 +36,7 @@
                 <th class="sortable" data-sort="name" title="Sort by name">Name</th>
                 <th class="sortable" data-sort="type" title="Sort by type">Type</th>
                 <th class="sortable" data-sort="tracks" title="Sort by track count">Tracks</th>
+                <th class="sortable" data-sort="created" title="Sort by creation date">Created</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -110,6 +111,7 @@ function submitDedup(e) {
             case 'name':   return row.querySelector('td:nth-child(2) a').textContent.trim().toLowerCase();
             case 'type':   return row.querySelector('td:nth-child(3)').textContent.trim();
             case 'tracks': return row.querySelector('td:nth-child(4)').textContent.trim().padStart(10, '0');
+            case 'created': return row.querySelector('td:nth-child(5)').textContent.trim();
         }
         return '';
     }
@@ -136,6 +138,7 @@ function submitDedup(e) {
     </td>
     <td class="muted">{{if .IsSmart}}smart{{else}}m3u{{end}}</td>
     <td class="mono">{{.SongCount}}</td>
+    <td class="muted">{{.CreatedAt.Format "2006-01-02"}}</td>
     <td>
         <div class="action-group">
             <a class="action-btn" href="/playlists/{{.ID}}" title="View tracks in {{.Name}}">view</a>
@@ -155,7 +158,7 @@ function submitDedup(e) {
     </td>
 </tr>
 {{else}}
-<tr><td colspan="5" class="empty">No playlists found.</td></tr>
+<tr><td colspan="6" class="empty">No playlists found.</td></tr>
 {{end}}
 {{end}}
 
