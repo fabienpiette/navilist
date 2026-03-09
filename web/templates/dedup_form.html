@@ -1,8 +1,18 @@
 {{template "base.html" .}}
 {{define "content"}}
-<h2>Duplicate Playlists</h2>
+<div class="page-title">
+    <a class="back-arrow" href="/" title="Back to playlist list">&#8592;</a>
+    <h2>Duplicate Playlists</h2>
+</div>
 
 <form method="POST" action="/playlists/dedup/confirm" id="dedup-form">
+    <div class="toolbar toolbar-sep">
+        <p class="muted" style="font-size:.75rem;margin-bottom:0;">Select which playlist to keep in each group. Unselected duplicates will be deleted.</p>
+        <button type="submit" class="danger" style="margin-left:auto"
+            title="Delete all duplicates except the kept ones"
+            onclick="return confirm('Delete all unchosen duplicates?')">delete duplicates</button>
+    </div>
+
     {{range $i, $g := .Groups}}
     <div class="dedup-group">
         <p class="muted" style="margin:0 0 .5rem;font-size:.85rem;">
@@ -42,14 +52,6 @@
     {{end}}
 
     <div id="delete-inputs"></div>
-
-    <div class="form-actions" style="margin-top:1.5rem;">
-        <button type="submit" class="danger" title="Delete all duplicates except the kept ones"
-            onclick="return confirm('Delete all unchosen duplicates?')">
-            Delete Duplicates
-        </button>
-        <a class="btn secondary" href="/" title="Cancel">Cancel</a>
-    </div>
 </form>
 
 <script>
@@ -65,7 +67,7 @@ function dedupUpdateDeletes() {
     GROUPS.forEach(function(g) {
         var keepRadio = document.querySelector('input[name="keep_' + g.idx + '"]:checked');
         var keepId = keepRadio ? keepRadio.value : '__none__';
-        if (keepId === '__none__') return; // keep all — nothing to delete for this group
+        if (keepId === '__none__') return;
         g.ids.forEach(function(id) {
             if (id !== keepId) {
                 var inp = document.createElement('input');
@@ -78,7 +80,6 @@ function dedupUpdateDeletes() {
     });
 }
 
-// Initialise on load.
 document.addEventListener('DOMContentLoaded', dedupUpdateDeletes);
 </script>
 {{end}}

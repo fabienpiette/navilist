@@ -1,0 +1,42 @@
+{{template "base.html" .}}
+{{define "content"}}
+<div class="page-title">
+    <a class="back-arrow" href="/" title="Back to playlist list">&#8592;</a>
+    <h2>Merge Playlists</h2>
+</div>
+
+<form method="POST" action="/playlists/merge/confirm">
+    {{range .Playlists}}
+    <input type="hidden" name="ids" value="{{.ID}}">
+    {{end}}
+
+    <div class="toolbar toolbar-sep">
+        <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.75rem;color:var(--muted);">
+            <input type="checkbox" name="delete_sources">
+            Delete source playlists after merge
+        </label>
+        <button type="submit" style="margin-left:auto" title="Create new merged playlist">merge</button>
+    </div>
+
+    <h2 style="margin-bottom:.75rem;">Sources</h2>
+    <p class="muted" style="font-size:.75rem;margin-bottom:.75rem;">Duplicate tracks across playlists will be merged into one.</p>
+    <div class="table-wrap section-sep">
+        <table>
+            <thead><tr><th>Playlist</th><th class="mono">Tracks</th></tr></thead>
+            <tbody>
+            {{range .Playlists}}
+            <tr><td>{{.Name}}</td><td class="mono">{{.SongCount}}</td></tr>
+            {{end}}
+            </tbody>
+            <tfoot>
+            <tr><td><strong>Total (before dedup)</strong></td><td class="mono"><strong>{{.Total}}</strong></td></tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="form-group" style="max-width:400px;">
+        <label for="name">New playlist name</label>
+        <input type="text" id="name" name="name" value="{{.Name}}" required autofocus>
+    </div>
+</form>
+{{end}}

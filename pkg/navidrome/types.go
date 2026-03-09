@@ -23,6 +23,7 @@ type PlaylistRules struct {
 	All   []Rule `json:"all,omitempty"`
 	Any   []Rule `json:"any,omitempty"`
 	Sort  string `json:"sort,omitempty"`
+	Order string `json:"order,omitempty"`
 	Limit int    `json:"limit,omitempty"`
 }
 
@@ -61,9 +62,6 @@ type AddTracksRequest struct {
 	IDs []string `json:"ids"`
 }
 
-type ndResponse[T any] struct {
-	Data T `json:"data"`
-}
 
 type authRequest struct {
 	Username string `json:"username"`

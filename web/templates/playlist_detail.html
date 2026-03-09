@@ -1,19 +1,27 @@
 {{template "base.html" .}}
 {{define "content"}}
-<div class="toolbar" style="margin-bottom:1.5rem;">
-    <strong>{{.Playlist.Name}}</strong>
+<div class="page-title">
+    <a class="back-arrow" href="/" title="Back to playlist list">&#8592;</a>
+    <h2>{{.Playlist.Name}}</h2>
     {{if .Playlist.IsSmart}}<span class="badge-smart">smart</span>{{else}}<span class="badge-m3u">m3u</span>{{end}}
-    <div style="margin-left:auto; display:flex; gap:.5rem;">
-        {{if .Playlist.IsSmart}}
-        <a class="tool-btn" href="/playlists/{{.Playlist.ID}}/edit/smart">edit rules</a>
-        {{else}}
-        <a class="tool-btn" href="/playlists/{{.Playlist.ID}}/edit">edit</a>
-        <a class="tool-btn" href="/playlists/{{.Playlist.ID}}/export">export .m3u</a>
-        {{end}}
-        <a class="tool-btn" href="/">&#8592; back</a>
-    </div>
 </div>
+
+<div class="toolbar toolbar-sep">
+    {{if .Playlist.IsSmart}}
+    <a class="tool-btn" href="/playlists/{{.Playlist.ID}}/edit/smart" title="Edit smart playlist rules">edit rules</a>
+    {{else}}
+    <a class="tool-btn" href="/playlists/{{.Playlist.ID}}/edit" title="Edit tracks in this playlist">edit</a>
+    <a class="tool-btn" href="/playlists/{{.Playlist.ID}}/export" title="Download as .m3u file">export .m3u</a>
+    {{end}}
+    <button class="tool-btn danger" style="margin-left:auto"
+        hx-delete="/playlists/{{.Playlist.ID}}"
+        hx-confirm="Delete {{.Playlist.Name}}?"
+        hx-on::after-request="window.location='/'"
+        title="Permanently delete this playlist">delete</button>
+</div>
+
 {{if .Playlist.Comment}}<p class="muted" style="margin-bottom:1rem;">{{.Playlist.Comment}}</p>{{end}}
+
 <div class="table-wrap">
     <table>
         <thead><tr><th>#</th><th>Title</th><th>Artist</th><th>Album</th></tr></thead>
