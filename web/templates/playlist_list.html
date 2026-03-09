@@ -31,7 +31,8 @@
     <a class="filter-pill {{if eq .Filter "smart"}}active{{end}}" href="/?filter=smart" title="Show Smart playlists only" data-pill="smart">smart (<span id="count-smart">{{.Smart}}</span>)</a>
 </div>
 
-<form method="POST" action="/playlists/batch/delete" id="batch-form"></form>
+<form method="POST" action="/playlists/batch/delete" id="batch-form"
+    onsubmit="document.querySelectorAll('.row-cb:checked').forEach(function(cb){if(cb.closest('tr').style.display==='none')cb.checked=false;})"></form>
 
 <div class="table-wrap">
     <table>
@@ -78,13 +79,21 @@ function filterPlaylists(q) {
     document.getElementById('count-smart').textContent = counts.smart || 0;
 }
 
+function visibleChecked() {
+    return Array.from(document.querySelectorAll('.row-cb:checked')).filter(function(cb) {
+        return cb.closest('tr').style.display !== 'none';
+    });
+}
+
 document.getElementById('select-all').addEventListener('change', function() {
-    document.querySelectorAll('.row-cb').forEach(function(cb) { cb.checked = this.checked; }, this);
+    document.querySelectorAll('.row-cb').forEach(function(cb) {
+        if (cb.closest('tr').style.display !== 'none') cb.checked = this.checked;
+    }, this);
 });
 
 function submitMerge(e) {
     e.preventDefault();
-    var checked = document.querySelectorAll('.row-cb:checked');
+    var checked = visibleChecked();
     if (checked.length < 2) {
         alert('Select at least 2 playlists to merge.');
         return;
@@ -105,7 +114,7 @@ function submitMerge(e) {
 
 function submitDedup(e) {
     e.preventDefault();
-    var checked = document.querySelectorAll('.row-cb:checked');
+    var checked = visibleChecked();
     if (checked.length < 2) {
         alert('Select at least 2 playlists to scan for duplicates.');
         return;
@@ -126,7 +135,7 @@ function submitDedup(e) {
 
 function submitSmartRename(e) {
     e.preventDefault();
-    var checked = document.querySelectorAll('.row-cb:checked');
+    var checked = visibleChecked();
     if (checked.length < 1) {
         alert('Select at least 1 playlist to smart rename.');
         return;
