@@ -20,10 +20,14 @@
                     </tr>
                 </thead>
                 <tbody>
+                <tr>
+                    <td><input type="radio" name="keep_{{$i}}" value="__none__" checked
+                        onchange="dedupUpdateDeletes()"></td>
+                    <td colspan="4" class="muted" style="font-style:italic;">keep all &mdash; do nothing</td>
+                </tr>
                 {{range $j, $p := $g.Playlists}}
                 <tr>
                     <td><input type="radio" name="keep_{{$i}}" value="{{$p.ID}}"
-                        {{if eq $j 0}}checked{{end}}
                         onchange="dedupUpdateDeletes()"></td>
                     <td>{{$p.Name}}</td>
                     <td>{{if $p.IsSmart}}smart{{else}}m3u{{end}}</td>
@@ -60,7 +64,8 @@ function dedupUpdateDeletes() {
     container.innerHTML = '';
     GROUPS.forEach(function(g) {
         var keepRadio = document.querySelector('input[name="keep_' + g.idx + '"]:checked');
-        var keepId = keepRadio ? keepRadio.value : g.ids[0];
+        var keepId = keepRadio ? keepRadio.value : '__none__';
+        if (keepId === '__none__') return; // keep all — nothing to delete for this group
         g.ids.forEach(function(id) {
             if (id !== keepId) {
                 var inp = document.createElement('input');
