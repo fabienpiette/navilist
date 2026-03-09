@@ -22,9 +22,14 @@
                     <input type="text" name="name" value="{{.Suggested}}"
                         style="width:100%;" title="Edit the suggested name">
                     {{else}}
-                    <input type="text" name="name" value="{{.CurrentName}}"
-                        placeholder="mixed — no suggestion" style="width:100%;color:var(--muted);"
-                        title="No suggestion: playlist tracks are too mixed">
+                    <div style="display:flex;gap:.5rem;align-items:center;">
+                        <input type="text" name="name" value=""
+                            placeholder="mixed — no suggestion" style="flex:1;"
+                            title="No suggestion: playlist tracks are too mixed">
+                        <button type="button" class="tool-btn"
+                            onclick="this.closest('td').querySelector('[name=name]').value=this.closest('td').querySelector('[name=current]').value"
+                            title="Copy original name into the field">original</button>
+                    </div>
                     {{end}}
                 </td>
             </tr>
