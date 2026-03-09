@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/user/navidrome-playlists/internal/m3u"
+	"github.com/user/navilist/internal/m3u"
 )
 
 func TestParseExtM3U(t *testing.T) {
