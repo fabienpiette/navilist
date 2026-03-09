@@ -1,7 +1,7 @@
 # Navilist
 
 <p align="center">
-  <img src="docs/demo.png" alt="" width="600">
+  <img src="docs/demo.gif" alt="" width="600">
 </p>
 
 <p align="center">
