@@ -318,7 +318,7 @@ func (h *Handler) DedupForm(w http.ResponseWriter, r *http.Request) {
 
 	if len(groups) == 0 {
 		log.Printf("dedup: no duplicate groups found")
-		h.renderError(w, r, "No duplicate playlists found", http.StatusOK)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 	log.Printf("dedup: found %d duplicate group(s)", len(groups))
