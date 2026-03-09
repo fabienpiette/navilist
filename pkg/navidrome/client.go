@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -34,7 +35,7 @@ func New(baseURL, username, password string) *Client {
 // Authenticate logs in and stores the JWT token.
 func (c *Client) Authenticate() error {
 	body, _ := json.Marshal(authRequest{Username: c.username, Password: c.password})
-	resp, err := c.httpClient.Post(c.baseURL+"/api/auth/login", "application/json", bytes.NewReader(body))
+	resp, err := c.httpClient.Post(c.baseURL+"/auth/login", "application/json", bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("auth request: %w", err)
 	}
@@ -44,13 +45,13 @@ func (c *Client) Authenticate() error {
 		return fmt.Errorf("auth failed: status %d", resp.StatusCode)
 	}
 
-	var r ndResponse[authResponse]
+	var r authResponse
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		return fmt.Errorf("auth decode: %w", err)
 	}
 
 	c.mu.Lock()
-	c.token = r.Data.Token
+	c.token = r.Token
 	c.tokenExp = time.Now().Add(23 * time.Hour)
 	c.mu.Unlock()
 	return nil
@@ -87,7 +88,14 @@ func (c *Client) Do(ctx context.Context, method, path string, body any) (*http.R
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.token)
+	req.Header.Set("X-ND-Authorization", "Bearer "+c.token)
 
-	return c.httpClient.Do(req)
+	start := time.Now()
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		log.Printf("navidrome %s %s: %v (%s)", method, path, err, time.Since(start).Round(time.Millisecond))
+		return nil, err
+	}
+	log.Printf("navidrome %s %s → %d (%s)", method, path, resp.StatusCode, time.Since(start).Round(time.Millisecond))
+	return resp, nil
 }
