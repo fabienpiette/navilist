@@ -15,6 +15,7 @@
     <button class="tool-btn danger" type="submit" form="batch-form" onclick="return confirm('Delete selected playlists?')" title="Delete all checked playlists">batch delete</button>
     <button class="tool-btn" onclick="submitMerge(event)" title="Merge checked playlists into a new one">merge selected</button>
     <button class="tool-btn" onclick="submitDedup(event)" title="Find duplicate playlists among checked">find duplicates</button>
+    <button class="tool-btn" onclick="submitSmartRename(event)" title="Suggest names for checked playlists based on their tracks">smart rename</button>
     {{if .Empty}}
     <button class="tool-btn danger"
         hx-post="/playlists/batch/delete-empty"
@@ -112,6 +113,27 @@ function submitDedup(e) {
     var f = document.createElement('form');
     f.method = 'POST';
     f.action = '/playlists/dedup';
+    checked.forEach(function(cb) {
+        var inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'ids';
+        inp.value = cb.value;
+        f.appendChild(inp);
+    });
+    document.body.appendChild(f);
+    f.submit();
+}
+
+function submitSmartRename(e) {
+    e.preventDefault();
+    var checked = document.querySelectorAll('.row-cb:checked');
+    if (checked.length < 1) {
+        alert('Select at least 1 playlist to smart rename.');
+        return;
+    }
+    var f = document.createElement('form');
+    f.method = 'POST';
+    f.action = '/playlists/smart-rename';
     checked.forEach(function(cb) {
         var inp = document.createElement('input');
         inp.type = 'hidden';

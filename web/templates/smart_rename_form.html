@@ -1,0 +1,41 @@
+{{template "base.html" .}}
+{{define "content"}}
+<h2>Smart Rename</h2>
+
+<form method="POST" action="/playlists/smart-rename/confirm">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Current Name</th>
+                    <th>New Name</th>
+                </tr>
+            </thead>
+            <tbody>
+            {{range .Rows}}
+            <tr>
+                <td class="muted">{{.CurrentName}}</td>
+                <td>
+                    <input type="hidden" name="id" value="{{.ID}}">
+                    <input type="hidden" name="current" value="{{.CurrentName}}">
+                    {{if .Suggested}}
+                    <input type="text" name="name" value="{{.Suggested}}"
+                        style="width:100%;" title="Edit the suggested name">
+                    {{else}}
+                    <input type="text" name="name" value="{{.CurrentName}}"
+                        placeholder="mixed — no suggestion" style="width:100%;color:var(--muted);"
+                        title="No suggestion: playlist tracks are too mixed">
+                    {{end}}
+                </td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="form-actions" style="margin-top:1.5rem;">
+        <button type="submit" title="Apply all renames">Rename</button>
+        <a class="btn secondary" href="/" title="Cancel">Cancel</a>
+    </div>
+</form>
+{{end}}

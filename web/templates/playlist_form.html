@@ -6,7 +6,16 @@
     <div class="form-row">
         <div class="form-group">
             <label for="name">Name</label>
-            <input type="text" id="name" name="name" value="{{.Playlist.Name}}" required autofocus>
+            <div style="display:flex;gap:.5rem;align-items:center;">
+                <input type="text" id="name" name="name" value="{{.Playlist.Name}}" required autofocus style="flex:1;">
+                {{if not .IsNew}}
+                <button type="button" class="tool-btn"
+                    hx-get="/playlists/{{.Playlist.ID}}/suggest-name"
+                    hx-swap="none"
+                    hx-on::after-request="if(event.detail.xhr.responseText.trim()) document.getElementById('name').value = event.detail.xhr.responseText.trim();"
+                    title="Suggest a name based on track content">suggest</button>
+                {{end}}
+            </div>
         </div>
         <div class="form-group">
             <label for="comment">Comment</label>
@@ -40,7 +49,7 @@
                     <td class="muted">{{$t.Album}}</td>
                     <td>
                         <input type="hidden" name="song_id" value="{{$t.ID}}">
-                        <button type="button" class="action-btn danger" onclick="this.closest('tr').remove()">&#215;</button>
+                        <button type="button" class="action-btn danger" onclick="this.closest('tr').remove()" title="Remove this track"><button type="button" class="action-btn danger" onclick="this.closest('tr').remove()">&#215;</button>#215;</button>
                     </td>
                 </tr>
                 {{end}}
@@ -49,8 +58,8 @@
     </div>
 
     <div class="form-actions">
-        <button type="submit">Save</button>
-        <a class="btn secondary" href="/">Cancel</a>
+        <button type="submit" title="Save playlist">Save</button>
+        <a class="btn secondary" href="/" title="Discard changes and go back">Cancel</a>
     </div>
 </form>
 {{end}}
