@@ -61,7 +61,8 @@ go run ./cmd/server
 ```yaml
 services:
   navilist:
-    build: .
+    image: ghcr.io/fabienpiette/navilist:latest
+    container_name: navilist
     restart: unless-stopped
     ports:
       - "8080:8080"
